@@ -1938,7 +1938,7 @@ img:hover {
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #ff1cff;
+  background: #7ecf0d;
 }
 .links-of-blogroll {
   font-size: 13px;
@@ -3234,4 +3234,13 @@ img:hover {
   .pagination {
     margin: 8px 0 0;
   }
+}
+.post-body {
+  opacity: 1;
+  display: block;
+  -webkit-transform: translateY(-35px);
+  -moz-transform: translateY(-35px);
+  -ms-transform: translateY(-35px);
+  -o-transform: translateY(-35px);
+  transform: translateY(-35px);
 }
