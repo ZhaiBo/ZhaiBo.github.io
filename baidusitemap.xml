@@ -3,8 +3,10 @@
 
 
     
+    
+    
   <url>
-    <loc>http://yoursite.com/2018/05/17/POI%E8%BD%AC%E6%8D%A2Excel%E4%B8%BAList/</loc>
+    <loc>https://zhaibo.ink/2018/05/17/POI%E8%BD%AC%E6%8D%A2Excel%E4%B8%BAList/</loc>
     <lastmod>2018-05-19T05:40:51.324Z</lastmod>
     <data>
         <display>
@@ -14,7 +16,7 @@
          
            
              
-              <breadCrumb title="Java" url="http://yoursite.com/categories/Java/"/>
+              <breadCrumb title="Java" url="https://zhaibo.ink/categories/Java/"/>
           
         </display>
     </data>
@@ -22,7 +24,7 @@
 
     
   <url>
-    <loc>http://yoursite.com/2018/05/18/Docker%E5%85%A5%E9%97%A8/</loc>
+    <loc>https://zhaibo.ink/2018/05/18/Docker%E5%85%A5%E9%97%A8/</loc>
     <lastmod>2018-05-17T13:08:49.345Z</lastmod>
     <data>
         <display>
@@ -34,12 +36,10 @@
          
            
              
-              <breadCrumb title="Linux" url="http://yoursite.com/categories/Linux/"/>
+              <breadCrumb title="Linux" url="https://zhaibo.ink/categories/Linux/"/>
           
         </display>
     </data>
     </url>
 
-    
-    
 </urlset>
