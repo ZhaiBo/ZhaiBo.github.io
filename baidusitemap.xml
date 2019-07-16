@@ -5,14 +5,19 @@
     
   <url>
     <loc>https://zhaibo.ink/2019/07/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83-MySQL5-7/</loc>
-    <lastmod>2019-07-16T10:17:06.018Z</lastmod>
+    <lastmod>2019-07-16T10:36:41.809Z</lastmod>
     <data>
         <display>
         <title>数据库设计规范-MySQL5.7</title>
         <pubTime>2019-07-16T09:55:49.000Z</pubTime>
         
+        <tag>MySQL</tag>
+         
          
            
+             
+              <breadCrumb title="数据库" url="https://zhaibo.ink/categories/%E6%95%B0%E6%8D%AE%E5%BA%93/"/>
+          
         </display>
     </data>
     </url>
