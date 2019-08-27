@@ -1,6 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[JVM运行时数据区]]></title>
+    <url>%2F2019%2F08%2F27%2FJVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;本篇文章总结了JVM运行时数据区。 简介JVM在执行java程序的过程中会把它管理的内存划分为若干个不同的数据区域。主要分为五个区域：堆(Heap)、栈(Stack)、本地方法栈(Native Stack)、方法区(Method Area)、程序计数器(Program Count Register)。如图: 程序计数器（Program Counter Register） 处于线程独占区。 较小的内存空间，可以看作是当前线程所执行的字节码的行号指示器。 如果线程执行的是Java方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址。如果正在执行的是native方法，这个计数器的值为undefined。 此区域是唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域。虚拟机栈（Java Virtual Machine Stacks）虚拟机栈描述的是Java方法执行的动态内存模型，处于线程独占区。 栈帧栈帧是方法运行时的基本数据结构。每个方法执行，都会创建一个栈帧，伴随着方法从创建到执行完成。用来存储局部变量表、操作数栈、动态链接、方法出口等。 局部变量表存放编译期可知的各种基本数据类型,对象引用和returnAddress类型。如果线程请求的栈深度大于虚拟机允许的深度，抛出StackOverFlowError，如果虚拟机可动态扩展，但无法申请到足够的内存，会抛出OutOfMemoryError。本地方法栈（Native Method Stack）与虚拟机栈类似，区别为虚拟机栈执行Java方法，本地方法栈执行Native方法。Java堆（Java Heap） 处于线程共享区。 所有线程共享的一块内存区域，虚拟机启动时创建。 存放对象实例，几乎所有对象实例都在这里分配内存。 垃圾收集的主要区域。 可细分为：新生代和老年代。方法区（Method Area） 处于线程共享区。 存储已被加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。 无法满足内存分配需求时，抛出OutOfMemoryError。运行时常量池（Runtime Constant Pool） 运行时常量池是方法区的一部分。 存放编译期生成的各种字面量和符号引用。直接内存（Direct Memory） 不是虚拟机运行时数据区的一部分，也不是JVM规范中定义的内存区域。 （New Input/Output）可使用Native函数库直接分配堆外内存，通过一个存储在Java堆中的DirectByteBuffer对象作为这块内存的引用来操作这块内存。 动态扩展时可能会抛出OutOfMemoryError。 参考： 《深入理解Java虚拟机 JVM高级特性与最佳实践》 周志明 著]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[Executor线程池框架]]></title>
     <url>%2F2019%2F08%2F09%2FExecutor%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%A1%86%E6%9E%B6%2F</url>
     <content type="text"><![CDATA[Executor简介Executor是JDK1.5之后引入的，其内部使用了线程池机制，通过该框架来控制线程的启动、执行和关闭，可以简化并发编程的操作。如下为Executor相关类图: Executor使用Java提供了Executors工具类，实际使用中我们可以根据需要选择合适的方法去创建和使用线程池。以下为四种主要的方法: newFixedThreadPool(nThreads)，创建一个固定大小的线程池，可控制线程最大并发数，当无可用线程时，任务会在队列中等待。示例代码: 1234567ExecutorService executorService = Executors.newFixedThreadPool(3);for (int i = 0; i &lt; 10; i++) &#123; executorService.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;); &#125;);&#125;executorService.shutdown(); newCachedThreadPool，创建一个可缓存线程池，如果线程池长度超过处理需要，可回收空闲线程，若无可回收线程，则新建。示例代码: 1234567ExecutorService executorService1 = Executors.newCachedThreadPool();for (int i = 0; i &lt; 10; i++) &#123; executorService.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;); &#125;);&#125;executorService.shutdown(); newScheduledThreadPool，创建一个固定长度的线程池，支持定时及周期性任务执行。示例代码: 12345678// 延迟0秒int initialDelay = 0;// 每隔三秒执行int period = 3;ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);executor.scheduleAtFixedRate(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;);&#125;, initialDelay, period, TimeUnit.SECONDS); newSingleThreadExecutor，创建一个单线程的线程池，它可以保证所有任务顺序执行。示例代码:12345678ExecutorService executorService = Executors.newSingleThreadExecutor();for (int i = 0; i &lt; 5; i++) &#123; final int index = i; executorService.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- &quot; + &quot;i=&quot; + index); &#125;); &#125; executorService.shutdown(); 执行结果如下: 在阿里的Java开发者手册中，是强制不允许使用Executors去创建线程池，如下图实际使用时，可以参考。]]></content>
