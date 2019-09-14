@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>https://zhaibo.ink/2019/09/01/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/</loc>
+    <lastmod>2019-09-14T15:51:56.637Z</lastmod>
+    <data>
+        <display>
+        <title>JVM垃圾收集</title>
+        <pubTime>2019-09-01T11:53:10.000Z</pubTime>
+        
+        <tag>JVM</tag>
+         
+         
+           
+             
+              <breadCrumb title="Java" url="https://zhaibo.ink/categories/Java/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://zhaibo.ink/2019/08/27/JVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/</loc>
     <lastmod>2019-08-27T11:16:47.543Z</lastmod>
     <data>
