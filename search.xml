@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[tomcat自动部署war包到ROOT目录]]></title>
+    <url>%2F2019%2F09%2F19%2Ftomcat%E8%87%AA%E5%8A%A8%E9%83%A8%E7%BD%B2war%E5%8C%85%E5%88%B0ROOT%E7%9B%AE%E5%BD%95%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;本篇文章说明了tomcat自动部署war包到ROOT目录。 需求部署war包到tomcat，访问路径为localhost:8080，不带项目名称。直接放到webapps下，自动解压后，访问路径需要带项目名称。 部署步骤 解压tomcat包。 在根目录下创建一个新的文件夹wars，并将要部署的war包放进去。 删除原本webapps下的所有文件。 修改conf目录下server.xml，在文件末尾Host标签中加上如下配置: 1&lt;Context path=&quot;/&quot; docBase=&quot;../wars/project.war&quot; reloadable=&quot;true&quot; crossContext=&quot;true&quot; /&gt; 启动tomcat，会将war自动解压到webapps下的ROOT目录，这样就可以直接通过localhost:8080访问项目了。 注意事项 一定要删除webapps下的所有文件。 创建新的目录存放要部署的war包，放到webapps下会自动解压，这样ROOT和webapps下都会有解压开的项目。]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[堆内存空间和内存分配策略]]></title>
     <url>%2F2019%2F09%2F03%2F%E5%A0%86%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4%E5%92%8C%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;本编文章总结了堆内存空间结构和内存分配策略。 堆内存空间结构Java 堆主要分为2个区域-年轻代与老年代，年轻代包括Eden 区和 Survivor 区，Survivor 区又分From区和 To区。如下图： Eden区对象会优先在新生代 Eden 区中进行分配，当 Eden 区空间不足时，虚拟机会使用复制算法发起一次 Minor GC（Young GC），清除掉垃圾对象。之后，Eden 区中绝大部分对象会被回收，而那些无需回收的存活对象，将会进到 Survivor 的 From 区（From 区内存不足时，直接进入 Old 区）。 Survivor区Survivor 区相当于是 Eden 区和 Old 区的一个缓冲区。如果没有Survivor 区域，Old区将很快被填满，就会触发Major GC（因为Major GC一般伴随着Minor GC，也可以看做触发了Full GC）。Survivor 的存在意义就是减少被送到老年代的对象，进而减少 Major GC 的发生。Survivor 又分为2个区，一个是 From 区，一个是 To 区。每次执行 Minor GC，会将 Eden 区和 From 存活的对象放到 Survivor 的 To 区（To 区内存不足时，直接进入 Old 区）。 为什么要将Survivor区分成From和To两个区？为了解决内存碎片化的问题。Minor GC 执行后，Eden 区会清空，存活的对象放到了 Survivor 区，而之前 Survivor 区中的对象，可能也有一些是需要被清除的。这时候JVM要使用标记清除算法去清除垃圾对象，而标记清除算法最大的问题就是内存碎片，由于在Eden区中有很多对象是“朝生夕死”的，所以必然会让内存产生严重的碎片化。Survivor 有2个区域，每次 Minor GC时，会将之前 Eden 区和 From 区中的存活对象复制到 To 区域。第二次 Minor GC 时，再将 Eden 区和 To 区中的存活对象再复制到 From 区域，以此反复。这样一来，总有一个Survivor区域是空闲的。这样就解决了内存碎片的问题。 Old区Old区据着2/3的堆内存空间，当对象从新生代中存活下来，就会被拷贝到这里。Major GC 会清理Old区中的对象，每次Major GC 都会触发“Stop-The-World”。内存越大，执行的时间也就越长。由于老年代中对象存活率很高，采用复制算法效率很低，所以老年代垃圾收集采用的是标记整理算法。 内存分配策略内存分配策略主要有以下几点： 对象优先分配在Eden区，如果Eden区没有足够的空间进行分配时，虚拟机执行一次MinorGC。 大对象直接进入老年代（需要大量连续内存空间的对象）。这样做的目的是避免在Eden区和两个Survivor区之间发生大量的内存拷贝（新生代采用复制算法收集内存）。 长期存活的对象进入老年代。虚拟机为每个对象定义了一个年龄（Age Count）计数器，如果对象经过了1次Minor GC那么对象会进入Survivor区，之后每经过一次Minor GC那么对象的年龄加1，直到达到阀值（默认15次），对象进入老年区。 动态判断对象的年龄。如果Survivor区中相同年龄的所有对象大小的总和大于Survivor空间的一半，年龄大于或等于该年龄的对象可以直接进入老年代。 空间分配担保。每次进行Minor GC时，JVM会计算Survivor区移至老年区的对象的平均大小，如果这个值大于老年区的剩余值大小则进行一次Full GC，如果小于检查HandlePromotionFailure设置，如果true则只进行Monitor GC,如果false则进行Full GC。]]></content>
