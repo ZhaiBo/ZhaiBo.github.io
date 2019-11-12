@@ -2,6 +2,13 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://zhaibo.ink/2019/08/08/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0-ThreadPoolExecutor/</loc>
+    
+    <lastmod>2019-11-12T01:03:38.785Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://zhaibo.ink/2019/10/04/lambda%E7%94%A8%E6%B3%95%E7%A4%BA%E4%BE%8B/</loc>
     
     <lastmod>2019-10-10T08:46:13.633Z</lastmod>
@@ -61,13 +68,6 @@
     <loc>https://zhaibo.ink/2019/08/09/Executor%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%A1%86%E6%9E%B6/</loc>
     
     <lastmod>2019-08-09T08:11:14.898Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://zhaibo.ink/2019/08/08/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0-ThreadPoolExecutor/</loc>
-    
-    <lastmod>2019-08-08T07:35:33.168Z</lastmod>
     
   </url>
   
