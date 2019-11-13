@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Thread的start、run方法]]></title>
+    <url>%2F2019%2F10%2F23%2FThread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;对比一下Java Thread的start()和run()。 start()使用start()才是真正意义上的启动一个新线程，调用start()之后，线程并不会立即进入到运行状态，而是会做一系列的准备工作，而是让自己处于就绪状态，此时会等待获取cpu资源，一旦获取到cpu资源，才会执行重写的run()，执行完后则会销毁线程。以下为线程调用start()的代码: 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; new Thread(runnable).start();&#125; 执行结果如下，可以看到start()启动了一个子线程。我们可以分析一下start()的源码，可以看出，当线程状态不为0时，会抛出IllegalThreadStateException，这就是为什么start方法不能执行两次的原因，最终，start方法会调用本地方法start0，以下为jdk8中start()的源码。 1234567891011121314151617181920public synchronized void start() &#123; // 0为初始化状态 if (threadStatus != 0) throw new IllegalThreadStateException(); group.add(this); boolean started = false; try &#123; start0(); started = true; &#125; finally &#123; try &#123; if (!started) &#123; group.threadStartFailed(this); &#125; &#125; catch (Throwable ignore) &#123; &#125; &#125;&#125;// 本地方法start0private native void start0(); run()run()和普通的方法没有什么区别，以下为run()执行的代码： 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; runnable.run();&#125; 执行结果如下：从执行结果可以看出，run方法并不是启动了一个子线程，而是直接执行了主线程。以下为JDK中run()方法执行的源码： 12345public void run() &#123; if (target != null) &#123; target.run(); &#125;&#125; 总结start()才能真正意义上的启动一个线程，才能去经历一个线程的生命周期。而run()只是一个普通的方法，并不会使用子线程去调用。start()不能执行两次，执行过一次之后，再执行就会抛出异常。]]></content>
+      <categories>
+        <category>多线程</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[分布式理论之BASE]]></title>
     <url>%2F2019%2F10%2F04%2F%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA%E4%B9%8BBASE%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;BASE理论是对CAP理论的延伸，是对 CAP 中 AP 方案的一个补充，提出通过牺牲强一致性获得高可用性，是由eBay的架构师Dan Pritchett在ACM上提出。 核心思想是： 即使无法做到强一致性（Strong Consistency，CAP 的一致性就是强一致性），但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性（Eventual consistency）。 什么是BASE理论？BASE是基本可用（Basically Available）、软状态（Soft State）、最终一致性（Eventual Consistency）三个短语的缩写。 基本可用基本可用（Basically Available）指的是分布式系统在故障时，允许损失部分可用性，即保证核心可用。 可损失部分性能，比如登录请求响应时间变长200ms。 可损失部分功能，比如注册功能暂时不可用。 软状态软状态（Soft State）是指允许系统存在中间状态，而该中间状态不会影响系统整体可用性，中间状态也是CAP理论中的数据不一致的体现，分布式存储中允许不同节点间副本同步的延时也是软状态的体现。 最终一致性最终一致性（Eventual Consistency）是指系统中的所有数据副本经过一定时间后，最终能够达到一致的状态。关键词是“一定时间”和“最终”。一定时间：不同系统能够容忍的数据不一致时间是不同的。最终：不管多长时间，最终还是要达到一致性的状态。 BASE和ACID的区别ACID 是数据库事务完整性的理论，强调强一致性。BASE 理论面向的是高可用可扩展的分布式系统，和 ACID 是相反的，它是通过牺牲强一致性来获得可用性，并允许数据在一段时间是不一致的。]]></content>
