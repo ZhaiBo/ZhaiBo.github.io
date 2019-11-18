@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title><![CDATA[Docker运行Alibaba-Cloud-Sentinel-Dashboard]]></title>
+    <url>%2F2019%2F11%2F01%2FDocker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;基于Docker快速搭建Alibaba Cloud Sentinel Dashboard。 下载docker image1docker search sentinel 1docker pull bladex/sentinel-dashboard 后台运行Sentinel Dashboard1docker run --name sentinel-dashboard -p 9001:8858 -d bladex/sentinel-dashboard:latest 访问localhost:9001用户名/密码:sentinel sentinel]]></content>
+      <categories>
+        <category>环境搭建</category>
+      </categories>
+  </entry>
+  <entry>
     <title><![CDATA[Thread的start、run方法]]></title>
     <url>%2F2019%2F10%2F23%2FThread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;对比一下Java Thread的start()和run()。 start()使用start()才是真正意义上的启动一个新线程，调用start()之后，线程并不会立即进入到运行状态，而是会做一系列的准备工作，而是让自己处于就绪状态，此时会等待获取cpu资源，一旦获取到cpu资源，才会执行重写的run()，执行完后则会销毁线程。以下为线程调用start()的代码: 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; new Thread(runnable).start();&#125; 执行结果如下，可以看到start()启动了一个子线程。我们可以分析一下start()的源码，可以看出，当线程状态不为0时，会抛出IllegalThreadStateException，这就是为什么start方法不能执行两次的原因，最终，start方法会调用本地方法start0，以下为jdk8中start()的源码。 1234567891011121314151617181920public synchronized void start() &#123; // 0为初始化状态 if (threadStatus != 0) throw new IllegalThreadStateException(); group.add(this); boolean started = false; try &#123; start0(); started = true; &#125; finally &#123; try &#123; if (!started) &#123; group.threadStartFailed(this); &#125; &#125; catch (Throwable ignore) &#123; &#125; &#125;&#125;// 本地方法start0private native void start0(); run()run()和普通的方法没有什么区别，以下为run()执行的代码： 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; runnable.run();&#125; 执行结果如下：从执行结果可以看出，run方法并不是启动了一个子线程，而是直接执行了主线程。以下为JDK中run()方法执行的源码： 12345public void run() &#123; if (target != null) &#123; target.run(); &#125;&#125; 总结start()才能真正意义上的启动一个线程，才能去经历一个线程的生命周期。而run()只是一个普通的方法，并不会使用子线程去调用。start()不能执行两次，执行过一次之后，再执行就会抛出异常。]]></content>
@@ -111,7 +119,7 @@
     <url>%2F2019%2F07%2F19%2FCentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;在Docker容器中运行Elasticsearch, Kibana和Cerebro,快速体验ES生态。 安装Docker CE卸载旧版本docker12345678yum remove docker \ docker-client \ docker-client-latest \ docker-common \ docker-latest \ docker-latest-logrotate \ docker-logrotate \ docker-engine 安装依赖包123yum install -y yum-utils \ device-mapper-persistent-data \ lvm2 设置仓库123yum-config-manager \ --add-repo \ https://download.docker.com/linux/centos/docker-ce.repo 可选项1yum-config-manager --enable docker-ce-nightly 1yum-config-manager --enable docker-ce-test 1yum-config-manager --disable docker-ce-nightly 安装Docker CE1yum install docker-ce docker-ce-cli containerd.io 启动1systemctl start docker 1docker run hello-world 运行ES、Kibana、Cerebro配置创建docker-compose.yaml，内容为123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172version: &apos;2.2&apos;services: cerebro: image: lmenezes/cerebro:0.8.3 container_name: cerebro ports: - &quot;9000:9000&quot; command: - -Dhosts.0.host=http://elasticsearch:9200 networks: - es7net kibana: image: docker.elastic.co/kibana/kibana:7.1.0 container_name: kibana7 environment: - I18N_LOCALE=zh-CN - XPACK_GRAPH_ENABLED=true - TIMELION_ENABLED=true - XPACK_MONITORING_COLLECTION_ENABLED=&quot;true&quot; ports: - &quot;5601:5601&quot; networks: - es7net elasticsearch: image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0 container_name: es7_01 environment: - cluster.name=geektime - node.name=es7_01 - bootstrap.memory_lock=true - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; - discovery.seed_hosts=es7_01 - cluster.initial_master_nodes=es7_01,es7_02 ulimits: memlock: soft: -1 hard: -1 volumes: - es7data1:/usr/share/elasticsearch/data ports: - 9200:9200 networks: - es7net elasticsearch2: image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0 container_name: es7_02 environment: - cluster.name=geektime - node.name=es7_02 - bootstrap.memory_lock=true - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; - discovery.seed_hosts=es7_01 - cluster.initial_master_nodes=es7_01,es7_02 ulimits: memlock: soft: -1 hard: -1 volumes: - es7data2:/usr/share/elasticsearch/data networks: - es7netvolumes: es7data1: driver: local es7data2: driver: localnetworks: es7net: driver: bridge 启动1docker-compose up 浏览器访问用户名/密码:admin/12345612http://ip:5601http://ip:9200]]></content>
       <categories>
-        <category>ElasticSearch</category>
+        <category>环境搭建</category>
       </categories>
   </entry>
   <entry>
@@ -130,7 +138,7 @@
     <url>%2F2018%2F06%2F11%2Fcentos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE%2F</url>
     <content type="text"><![CDATA[安装redis依赖12yum install -y gcc-c++yum install -y tcl 下载redis并安装12345cd /usr/local/wget http://download.redis.io/releases/redis-3.2.9.tar.gztar -zxvf redis-3.2.9.tar.gzcd redis-3.2.9 make &amp;&amp; make test &amp;&amp; make install redis的生产环境启动方案第一步:&emsp;将redis utils目录下redis_init_script脚本,copy到/etc/init.d目录中,将redis_init_script重命名为redis_7000,7000是这个redis实例监听的端口号.给脚本读写执行的权限. 1234cp ./utils/redis_init_script /etc/init.d/cd /etc/init.dmv redis_init_script redis_7000chmod 777 redis_7000 第二步:&emsp;修改redis_7000脚本的第6行的REDISPORT，设置为相同的端口号(7000),并在顶部加上以下内容.让脚本开机执行. 12# chkconfig: 2345 90 10# description: Redis is a persistent key-value database 1chkconfig redis_7000 on 第三步:&emsp;创建两个目录：/etc/redis（存放redis的配置文件），/var/redis/7000（存放redis的持久化文件）. 123mkdir /etc/redismkdir /var/redismkdir /var/redis/7000 第四步:&emsp;修改redis配置文件（默认在redis安装目录下，redis.conf），拷贝到/etc/redis目录中，修改名称为7000.conf.要修改的配置为: 1234daemonize yes pidfile /var/run/redis_7000.pid port 7000dir /var/redis/7000 1cd /usr/local/redis-3.2.9 12cp ./redis.conf /etc/redismv redis.conf 7000.conf 第五步:&emsp;启动redis 12./redis_7000 startps -ef | grep redis redis-cli的使用连接本机的端口停止redis进程,ip为本机,端口为6379时可不写 1redis-cli -h 127.0.0.1 -p 7000 SHUTDOWN， ping redis的端口，查看是否正常 1redis-cli -p 7000 PING 进入交互式命令行 1redis-cli -p 7000 接着就可以使用redis存取命令操作redis。]]></content>
       <categories>
-        <category>Java</category>
+        <category>环境搭建</category>
       </categories>
       <tags>
         <tag>Redis</tag>

@@ -2,6 +2,27 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://zhaibo.ink/2019/11/01/Docker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard/</loc>
+    
+    <lastmod>2019-11-18T01:41:59.472Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://zhaibo.ink/2018/06/11/centos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE/</loc>
+    
+    <lastmod>2019-11-18T01:38:39.810Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://zhaibo.ink/2019/07/19/CentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro/</loc>
+    
+    <lastmod>2019-11-18T01:38:31.753Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://zhaibo.ink/2019/10/23/Thread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95/</loc>
     
     <lastmod>2019-11-13T02:06:53.819Z</lastmod>
@@ -79,23 +100,9 @@
   </url>
   
   <url>
-    <loc>https://zhaibo.ink/2019/07/19/CentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro/</loc>
-    
-    <lastmod>2019-07-19T08:13:42.486Z</lastmod>
-    
-  </url>
-  
-  <url>
     <loc>https://zhaibo.ink/2019/07/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83-MySQL5-7/</loc>
     
     <lastmod>2019-07-19T08:06:30.273Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://zhaibo.ink/2018/06/11/centos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE/</loc>
-    
-    <lastmod>2018-06-12T09:32:51.559Z</lastmod>
     
   </url>
   
