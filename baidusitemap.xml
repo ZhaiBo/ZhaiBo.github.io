@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>https://zhaibo.ink/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</loc>
+    <lastmod>2019-12-02T01:01:06.005Z</lastmod>
+    <data>
+        <display>
+        <title>SpringCloud日志集中化处理：ELK+Kafka</title>
+        <pubTime>2019-11-08T00:54:56.000Z</pubTime>
+        
+        <tag>SpringCloud</tag>
+         
+         
+           
+             
+              <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://zhaibo.ink/2019/11/01/Docker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard/</loc>
     <lastmod>2019-11-18T01:41:59.472Z</lastmod>
     <data>
