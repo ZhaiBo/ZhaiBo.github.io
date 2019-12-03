@@ -4,6 +4,26 @@
 
     
   <url>
+    <loc>https://zhaibo.ink/2019/10/10/Redis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/</loc>
+    <lastmod>2019-12-03T03:04:52.433Z</lastmod>
+    <data>
+        <display>
+        <title>Redis数据持久化的两种方式</title>
+        <pubTime>2019-10-10T02:51:51.000Z</pubTime>
+        
+        <tag>Redis</tag>
+         
+         
+           
+             
+              <breadCrumb title="缓存" url="https://zhaibo.ink/categories/%E7%BC%93%E5%AD%98/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://zhaibo.ink/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</loc>
     <lastmod>2019-12-02T05:46:53.555Z</lastmod>
     <data>
