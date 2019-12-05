@@ -4,6 +4,162 @@
 
     
   <url>
+    <loc>https://zhaibo.ink/2018/08/05/Nginx%E7%9A%84%E5%87%A0%E7%A7%8D%E7%94%A8%E9%80%94/</loc>
+    <lastmod>2019-12-05T09:18:41.395Z</lastmod>
+    <data>
+        <display>
+        <title>Nginx的几种用途</title>
+        <pubTime>2018-08-05T08:45:02.000Z</pubTime>
+        
+         
+           
+             
+              <breadCrumb title="Nginx" url="https://zhaibo.ink/categories/Nginx/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/08/05/Redis%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93/</loc>
+    <lastmod>2019-12-05T08:42:26.295Z</lastmod>
+    <data>
+        <display>
+        <title>Redis常见问题总结</title>
+        <pubTime>2019-08-05T07:21:12.000Z</pubTime>
+        
+        <tag>环境搭建</tag>
+         
+         
+           
+             
+              <breadCrumb title="Redis" url="https://zhaibo.ink/categories/Redis/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/07/10/Redis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/</loc>
+    <lastmod>2019-12-05T08:41:26.270Z</lastmod>
+    <data>
+        <display>
+        <title>Redis数据持久化的两种方式</title>
+        <pubTime>2019-07-10T02:51:51.000Z</pubTime>
+        
+         
+           
+             
+              <breadCrumb title="Redis" url="https://zhaibo.ink/categories/Redis/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/10/23/Thread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95/</loc>
+    <lastmod>2019-12-05T08:36:13.284Z</lastmod>
+    <data>
+        <display>
+        <title>Thread的start、run方法</title>
+        <pubTime>2019-10-23T02:01:05.000Z</pubTime>
+        
+        <tag>多线程</tag>
+         
+         
+           
+             
+              <breadCrumb title="并发" url="https://zhaibo.ink/categories/%E5%B9%B6%E5%8F%91/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/07/19/CentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro/</loc>
+    <lastmod>2019-12-05T08:35:05.056Z</lastmod>
+    <data>
+        <display>
+        <title>CentOS下Docker搭建ES、Kibana、Cerebro</title>
+        <pubTime>2019-07-19T07:56:44.000Z</pubTime>
+        
+        <tag>环境搭建</tag>
+         
+         
+           
+             
+              <breadCrumb title="Elastic Stack" url="https://zhaibo.ink/categories/Elastic-Stack/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2018/06/11/centos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE/</loc>
+    <lastmod>2019-12-05T08:32:52.158Z</lastmod>
+    <data>
+        <display>
+        <title>centos下redis的安装及配置</title>
+        <pubTime>2018-06-11T00:46:43.000Z</pubTime>
+        
+        <tag>环境搭建</tag>
+         
+         
+           
+             
+              <breadCrumb title="Redis" url="https://zhaibo.ink/categories/Redis/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/11/01/Docker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard/</loc>
+    <lastmod>2019-12-05T08:30:59.017Z</lastmod>
+    <data>
+        <display>
+        <title>Docker运行Alibaba-Cloud-Sentinel-Dashboard</title>
+        <pubTime>2019-11-01T01:33:57.000Z</pubTime>
+        
+        <tag>环境搭建</tag>
+         
+         
+           
+             
+              <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2018/07/05/Nginx%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/</loc>
+    <lastmod>2019-12-05T08:29:45.361Z</lastmod>
+    <data>
+        <display>
+        <title>Nginx安装配置</title>
+        <pubTime>2018-07-05T08:23:20.000Z</pubTime>
+        
+        <tag>环境搭建</tag>
+         
+         
+           
+             
+              <breadCrumb title="Nginx" url="https://zhaibo.ink/categories/Nginx/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://zhaibo.ink/2019/11/12/SpringCloud%E5%BA%94%E7%94%A8%E6%8C%87%E6%A0%87%E7%9B%91%E6%8E%A7%EF%BC%9APrometheus-Grafana/</loc>
     <lastmod>2019-12-05T07:11:15.712Z</lastmod>
     <data>
@@ -65,100 +221,6 @@
            
              
               <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://zhaibo.ink/2019/10/10/Redis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/</loc>
-    <lastmod>2019-12-03T03:04:52.433Z</lastmod>
-    <data>
-        <display>
-        <title>Redis数据持久化的两种方式</title>
-        <pubTime>2019-10-10T02:51:51.000Z</pubTime>
-        
-        <tag>Redis</tag>
-         
-         
-           
-             
-              <breadCrumb title="缓存" url="https://zhaibo.ink/categories/%E7%BC%93%E5%AD%98/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://zhaibo.ink/2019/11/01/Docker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard/</loc>
-    <lastmod>2019-11-18T01:41:59.472Z</lastmod>
-    <data>
-        <display>
-        <title>Docker运行Alibaba-Cloud-Sentinel-Dashboard</title>
-        <pubTime>2019-11-01T01:33:57.000Z</pubTime>
-        
-         
-           
-             
-              <breadCrumb title="环境搭建" url="https://zhaibo.ink/categories/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://zhaibo.ink/2018/06/11/centos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE/</loc>
-    <lastmod>2019-11-18T01:38:39.810Z</lastmod>
-    <data>
-        <display>
-        <title>centos下redis的安装及配置</title>
-        <pubTime>2018-06-11T00:46:43.000Z</pubTime>
-        
-        <tag>Redis</tag>
-         
-         
-           
-             
-              <breadCrumb title="环境搭建" url="https://zhaibo.ink/categories/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://zhaibo.ink/2019/07/19/CentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro/</loc>
-    <lastmod>2019-11-18T01:38:31.753Z</lastmod>
-    <data>
-        <display>
-        <title>CentOS下Docker搭建ES、Kibana、Cerebro</title>
-        <pubTime>2019-07-19T07:56:44.000Z</pubTime>
-        
-         
-           
-             
-              <breadCrumb title="环境搭建" url="https://zhaibo.ink/categories/%E7%8E%AF%E5%A2%83%E6%90%AD%E5%BB%BA/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://zhaibo.ink/2019/10/23/Thread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95/</loc>
-    <lastmod>2019-11-13T02:06:53.819Z</lastmod>
-    <data>
-        <display>
-        <title>Thread的start、run方法</title>
-        <pubTime>2019-10-23T02:01:05.000Z</pubTime>
-        
-         
-           
-             
-              <breadCrumb title="多线程" url="https://zhaibo.ink/categories/%E5%A4%9A%E7%BA%BF%E7%A8%8B/"/>
           
         </display>
     </data>

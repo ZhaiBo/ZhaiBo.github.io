@@ -42,26 +42,21 @@
     <url>%2F2019%2F11%2F01%2FDocker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;基于Docker快速搭建Alibaba Cloud Sentinel Dashboard。 下载docker image1docker search sentinel 1docker pull bladex/sentinel-dashboard 后台运行Sentinel Dashboard1docker run --name sentinel-dashboard -p 9001:8858 -d bladex/sentinel-dashboard:latest 访问localhost:9001用户名/密码:sentinel sentinel]]></content>
       <categories>
-        <category>环境搭建</category>
+        <category>微服务</category>
       </categories>
+      <tags>
+        <tag>环境搭建</tag>
+      </tags>
   </entry>
   <entry>
     <title><![CDATA[Thread的start、run方法]]></title>
     <url>%2F2019%2F10%2F23%2FThread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;对比一下Java Thread的start()和run()。 start()使用start()才是真正意义上的启动一个新线程，调用start()之后，线程并不会立即进入到运行状态，而是会做一系列的准备工作，而是让自己处于就绪状态，此时会等待获取cpu资源，一旦获取到cpu资源，才会执行重写的run()，执行完后则会销毁线程。以下为线程调用start()的代码: 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; new Thread(runnable).start();&#125; 执行结果如下，可以看到start()启动了一个子线程。我们可以分析一下start()的源码，可以看出，当线程状态不为0时，会抛出IllegalThreadStateException，这就是为什么start方法不能执行两次的原因，最终，start方法会调用本地方法start0，以下为jdk8中start()的源码。 1234567891011121314151617181920public synchronized void start() &#123; // 0为初始化状态 if (threadStatus != 0) throw new IllegalThreadStateException(); group.add(this); boolean started = false; try &#123; start0(); started = true; &#125; finally &#123; try &#123; if (!started) &#123; group.threadStartFailed(this); &#125; &#125; catch (Throwable ignore) &#123; &#125; &#125;&#125;// 本地方法start0private native void start0(); run()run()和普通的方法没有什么区别，以下为run()执行的代码： 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; runnable.run();&#125; 执行结果如下：从执行结果可以看出，run方法并不是启动了一个子线程，而是直接执行了主线程。以下为JDK中run()方法执行的源码： 12345public void run() &#123; if (target != null) &#123; target.run(); &#125;&#125; 总结start()才能真正意义上的启动一个线程，才能去经历一个线程的生命周期。而run()只是一个普通的方法，并不会使用子线程去调用。start()不能执行两次，执行过一次之后，再执行就会抛出异常。]]></content>
       <categories>
-        <category>多线程</category>
-      </categories>
-  </entry>
-  <entry>
-    <title><![CDATA[Redis数据持久化的两种方式]]></title>
-    <url>%2F2019%2F10%2F10%2FRedis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;Redis数据持久化的两种方式。 为什么要做redis持久化对于一个企业级的redis架构来说，持久化是必不可少的。持久化的作用主要体现在灾难恢复，数据恢复。 比如redis故障了，我们需要让redis尽快重启并正常提供服务。但是如果没有做数据持久化，就算重启也没有数据可用，如果这时候收到大量的请求，缓存全部无法命中，在redis里找不到数据，大量的请求直接请求到数据库，数据库很有可能承受不了挂掉，如果数据库挂掉，数据无法恢复到redis里，将导致服务不可用。 如果能够做好redis的持久化，备份和恢复方案做到企业级的程度，那么即使redis故障了，也可以通过备份数据，快速恢复数据，一旦恢复立即就能对外提供服务。 redis持久化的两种方式持久化就是把当前Redis数据库中的内存数据保存到硬盘的过程。当然我们也可以将这些数据备份到云服务上去。如果redis挂了，服务器上的内存和磁盘上的数据都丢了，可以从云服务上拷贝回来之前的数据，放到指定的目录中，然后重新启动redis，redis就会自动根据持久化数据文件中的数据，去恢复内存中的数据，继续对外提供服务。 如果我们想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。redis为我们提供了两种持久化方式：RDB(Redis DataBase)和AOF(Append Only File)。 RDBRDB持久化机制，是对redis中的数据执行周期性的持久化。每隔一段指定时间会生成数据快照到磁盘。RDB方式有以下优点： RDB会生成多个数据文件，每个数据文件都代表了某一个时刻中redis的数据，这种多个数据文件的方式，非常适合做冷备，可以将这种完整的数据文件发送到一些远程的安全存储上去，比如说Amazon的S3云服务上去，在国内可以是阿里云的ODPS分布式存储上，以预定好的备份策略来定期备份redis中的数据。 RDB对redis提供的读写服务，影响非常小，可以让redis保持高性能，因为redis主进程只需要fork一个子进程，让子进程执行磁盘IO操作来进行RDB持久化即可。 相对于AOF持久化机制来说，直接基于RDB数据文件来重启和恢复redis进程，更加快速。结合上述优点，RDB特别适合做冷备份。因为AOF存放的指令日志，做数据恢复的时候，是要回放和执行所有的指令日志，来恢复出来内存中的所有数据的。而RDB就是一份数据文件，恢复的时候，直接加载到内存中即可。 RDB方式有以下缺点： 如果想要redis故障时，尽可能少的丢失数据，那么AOF方法比较合适。一般来说，RDB数据快照文件，都是每隔5分钟，或者更长时间生成一次，这个时候就得接受一旦redis进程宕机，那么会丢失最近5分钟的数据。这个也是RDB最大的缺点，不适合做第一优先的恢复方案，如果依赖RDB做第一优先恢复方案，可能会导致数据丢失较多。 RDB每次fork子进程来执行RDB快照数据文件生成的时候，如果数据文件特别大，可能会导致对客户端提供的服务暂停数毫秒，或者甚至数秒。一般不要让RDB生成快照的的间隔太长，否则每次生成的RDB文件太大了，对redis本身的性能会有影响。 AOFAOF机制是将每条写入命令作为日志，以append-only的模式写入一个日志文件中，在redis重启的时候，可以通过回放AOF日志中的写入指令来重新构建整个数据集。AOF方式的优点： AOF可以更好的保护数据不丢失，一般AOF会每隔1秒，通过一个后台线程执行一次fsync操作，保证os cache中的数据写入磁盘中，如果redis进程挂了，最多丢掉1秒钟的数据。 AOF日志文件以append-only模式写入，所以没有任何磁盘寻址的开销，写入性能非常高，而且文件不容易破损，即使文件尾部破损，也很容易修复。 AOF日志文件即使过大的时候，出现后台重写操作，也不会影响客户端的读写。因为在rewrite log的时候，会对其中的指令进行压缩，创建出一份需要恢复数据的最小日志出来。在创建新日志文件的时候，老的日志文件还是照常写入。当新的merge后的日志文件ready的时候，再交换新老日志文件即可。 AOF日志文件的命令通过非常可读的方式进行记录，这个特性非常适合做灾难性的误删除的紧急恢复。比如某人不小心用flushall命令清空了所有数据，只要这个时候后台rewrite还没有发生，那么就可以立即拷贝AOF文件，将最后一条flushall命令给删了，然后再将该AOF文件放回去，就可以通过恢复机制，自动恢复所有数据。 AOF方式的缺点： 对于同一份数据来说，AOF日志文件通常比RDB数据快照文件更大。 AOF开启后，支持的写QPS会比RDB支持的写QPS低，因为AOF一般会配置成每秒fsync一次日志文件，当然，每秒一次fsync，性能也还是很高的。如果你想保证一条数据都不丢，可以将AOF的fsync设置成每写入一条数据，fsync一次，但这样会导致redis的QPS大大降低。 AOF曾经发生过bug，通过AOF记录的日志，进行数据恢复的时候，没有恢复出一模一样的数据出来。所以说，类似AOF这种较为复杂的基于命令日志/merge/回放的方式，比基于RDB每次持久化一份完整的数据快照文件的方式，更加脆弱一些，容易有bug。不过AOF就是为了避免rewrite过程导致的bug，因此每次rewrite并不是基于旧的指令日志进行merge的，而是基于当时内存中的数据进行指令的重新构建，这样健壮性会好很多。 唯一的比较大的缺点，其实就是做数据恢复的时候，会比较慢，还有做冷备、定期的备份，不太方便，可能要自己手写复杂的脚本去做，做冷备不太合适。 RDB和AOF到底该如何选择 不要仅使用RDB，因为那样会导致你丢失很多数据。 也不要仅仅使用AOF，因为那样有两个问题。第一，通过AOF做冷备没有RDB做冷备恢复速度快; 第二，RDB每次简单粗暴生成数据快照，更加健壮，可以避免AOF这种复杂的备份和恢复机制的bug。 综合使用AOF和RDB两种持久化机制，用AOF来保证数据不丢失，作为数据恢复的第一选择; 用RDB来做不同程度的冷备，在AOF文件都丢失或损坏不可用的时候，还可以使用RDB来进行快速的数据恢复。]]></content>
-      <categories>
-        <category>缓存</category>
+        <category>并发</category>
       </categories>
       <tags>
-        <tag>Redis</tag>
+        <tag>多线程</tag>
       </tags>
   </entry>
   <entry>
@@ -163,12 +158,26 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[Redis常见问题总结]]></title>
+    <url>%2F2019%2F08%2F05%2FRedis%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;总结Redis使用过程中的常见问题。 缓存粒度问题缓存穿透问题缓存雪崩问题缓存无底洞问题]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+      <tags>
+        <tag>环境搭建</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[CentOS下Docker搭建ES、Kibana、Cerebro]]></title>
     <url>%2F2019%2F07%2F19%2FCentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro%2F</url>
     <content type="text"><![CDATA[&emsp;&emsp;在Docker容器中运行Elasticsearch, Kibana和Cerebro,快速体验ES生态。 安装Docker CE卸载旧版本docker12345678yum remove docker \ docker-client \ docker-client-latest \ docker-common \ docker-latest \ docker-latest-logrotate \ docker-logrotate \ docker-engine 安装依赖包123yum install -y yum-utils \ device-mapper-persistent-data \ lvm2 设置仓库123yum-config-manager \ --add-repo \ https://download.docker.com/linux/centos/docker-ce.repo 可选项1yum-config-manager --enable docker-ce-nightly 1yum-config-manager --enable docker-ce-test 1yum-config-manager --disable docker-ce-nightly 安装Docker CE1yum install docker-ce docker-ce-cli containerd.io 启动1systemctl start docker 1docker run hello-world 运行ES、Kibana、Cerebro配置创建docker-compose.yaml，内容为123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172version: &apos;2.2&apos;services: cerebro: image: lmenezes/cerebro:0.8.3 container_name: cerebro ports: - &quot;9000:9000&quot; command: - -Dhosts.0.host=http://elasticsearch:9200 networks: - es7net kibana: image: docker.elastic.co/kibana/kibana:7.1.0 container_name: kibana7 environment: - I18N_LOCALE=zh-CN - XPACK_GRAPH_ENABLED=true - TIMELION_ENABLED=true - XPACK_MONITORING_COLLECTION_ENABLED=&quot;true&quot; ports: - &quot;5601:5601&quot; networks: - es7net elasticsearch: image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0 container_name: es7_01 environment: - cluster.name=geektime - node.name=es7_01 - bootstrap.memory_lock=true - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; - discovery.seed_hosts=es7_01 - cluster.initial_master_nodes=es7_01,es7_02 ulimits: memlock: soft: -1 hard: -1 volumes: - es7data1:/usr/share/elasticsearch/data ports: - 9200:9200 networks: - es7net elasticsearch2: image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0 container_name: es7_02 environment: - cluster.name=geektime - node.name=es7_02 - bootstrap.memory_lock=true - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; - discovery.seed_hosts=es7_01 - cluster.initial_master_nodes=es7_01,es7_02 ulimits: memlock: soft: -1 hard: -1 volumes: - es7data2:/usr/share/elasticsearch/data networks: - es7netvolumes: es7data1: driver: local es7data2: driver: localnetworks: es7net: driver: bridge 启动1docker-compose up 浏览器访问用户名/密码:admin/12345612http://ip:5601http://ip:9200]]></content>
       <categories>
-        <category>环境搭建</category>
+        <category>Elastic Stack</category>
       </categories>
+      <tags>
+        <tag>环境搭建</tag>
+      </tags>
   </entry>
   <entry>
     <title><![CDATA[数据库设计规范-MySQL5.7]]></title>
@@ -182,14 +191,41 @@
       </tags>
   </entry>
   <entry>
+    <title><![CDATA[Redis数据持久化的两种方式]]></title>
+    <url>%2F2019%2F07%2F10%2FRedis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;Redis数据持久化的两种方式。 为什么要做redis持久化对于一个企业级的redis架构来说，持久化是必不可少的。持久化的作用主要体现在灾难恢复，数据恢复。 比如redis故障了，我们需要让redis尽快重启并正常提供服务。但是如果没有做数据持久化，就算重启也没有数据可用，如果这时候收到大量的请求，缓存全部无法命中，在redis里找不到数据，大量的请求直接请求到数据库，数据库很有可能承受不了挂掉，如果数据库挂掉，数据无法恢复到redis里，将导致服务不可用。 如果能够做好redis的持久化，备份和恢复方案做到企业级的程度，那么即使redis故障了，也可以通过备份数据，快速恢复数据，一旦恢复立即就能对外提供服务。 redis持久化的两种方式持久化就是把当前Redis数据库中的内存数据保存到硬盘的过程。当然我们也可以将这些数据备份到云服务上去。如果redis挂了，服务器上的内存和磁盘上的数据都丢了，可以从云服务上拷贝回来之前的数据，放到指定的目录中，然后重新启动redis，redis就会自动根据持久化数据文件中的数据，去恢复内存中的数据，继续对外提供服务。 如果我们想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。redis为我们提供了两种持久化方式：RDB(Redis DataBase)和AOF(Append Only File)。 RDBRDB持久化机制，是对redis中的数据执行周期性的持久化。每隔一段指定时间会生成数据快照到磁盘。RDB方式有以下优点： RDB会生成多个数据文件，每个数据文件都代表了某一个时刻中redis的数据，这种多个数据文件的方式，非常适合做冷备，可以将这种完整的数据文件发送到一些远程的安全存储上去，比如说Amazon的S3云服务上去，在国内可以是阿里云的ODPS分布式存储上，以预定好的备份策略来定期备份redis中的数据。 RDB对redis提供的读写服务，影响非常小，可以让redis保持高性能，因为redis主进程只需要fork一个子进程，让子进程执行磁盘IO操作来进行RDB持久化即可。 相对于AOF持久化机制来说，直接基于RDB数据文件来重启和恢复redis进程，更加快速。结合上述优点，RDB特别适合做冷备份。因为AOF存放的指令日志，做数据恢复的时候，是要回放和执行所有的指令日志，来恢复出来内存中的所有数据的。而RDB就是一份数据文件，恢复的时候，直接加载到内存中即可。 RDB方式有以下缺点： 如果想要redis故障时，尽可能少的丢失数据，那么AOF方法比较合适。一般来说，RDB数据快照文件，都是每隔5分钟，或者更长时间生成一次，这个时候就得接受一旦redis进程宕机，那么会丢失最近5分钟的数据。这个也是RDB最大的缺点，不适合做第一优先的恢复方案，如果依赖RDB做第一优先恢复方案，可能会导致数据丢失较多。 RDB每次fork子进程来执行RDB快照数据文件生成的时候，如果数据文件特别大，可能会导致对客户端提供的服务暂停数毫秒，或者甚至数秒。一般不要让RDB生成快照的的间隔太长，否则每次生成的RDB文件太大了，对redis本身的性能会有影响。 AOFAOF机制是将每条写入命令作为日志，以append-only的模式写入一个日志文件中，在redis重启的时候，可以通过回放AOF日志中的写入指令来重新构建整个数据集。AOF方式的优点： AOF可以更好的保护数据不丢失，一般AOF会每隔1秒，通过一个后台线程执行一次fsync操作，保证os cache中的数据写入磁盘中，如果redis进程挂了，最多丢掉1秒钟的数据。 AOF日志文件以append-only模式写入，所以没有任何磁盘寻址的开销，写入性能非常高，而且文件不容易破损，即使文件尾部破损，也很容易修复。 AOF日志文件即使过大的时候，出现后台重写操作，也不会影响客户端的读写。因为在rewrite log的时候，会对其中的指令进行压缩，创建出一份需要恢复数据的最小日志出来。在创建新日志文件的时候，老的日志文件还是照常写入。当新的merge后的日志文件ready的时候，再交换新老日志文件即可。 AOF日志文件的命令通过非常可读的方式进行记录，这个特性非常适合做灾难性的误删除的紧急恢复。比如某人不小心用flushall命令清空了所有数据，只要这个时候后台rewrite还没有发生，那么就可以立即拷贝AOF文件，将最后一条flushall命令给删了，然后再将该AOF文件放回去，就可以通过恢复机制，自动恢复所有数据。 AOF方式的缺点： 对于同一份数据来说，AOF日志文件通常比RDB数据快照文件更大。 AOF开启后，支持的写QPS会比RDB支持的写QPS低，因为AOF一般会配置成每秒fsync一次日志文件，当然，每秒一次fsync，性能也还是很高的。如果你想保证一条数据都不丢，可以将AOF的fsync设置成每写入一条数据，fsync一次，但这样会导致redis的QPS大大降低。 AOF曾经发生过bug，通过AOF记录的日志，进行数据恢复的时候，没有恢复出一模一样的数据出来。所以说，类似AOF这种较为复杂的基于命令日志/merge/回放的方式，比基于RDB每次持久化一份完整的数据快照文件的方式，更加脆弱一些，容易有bug。不过AOF就是为了避免rewrite过程导致的bug，因此每次rewrite并不是基于旧的指令日志进行merge的，而是基于当时内存中的数据进行指令的重新构建，这样健壮性会好很多。 唯一的比较大的缺点，其实就是做数据恢复的时候，会比较慢，还有做冷备、定期的备份，不太方便，可能要自己手写复杂的脚本去做，做冷备不太合适。 RDB和AOF到底该如何选择 不要仅使用RDB，因为那样会导致你丢失很多数据。 也不要仅仅使用AOF，因为那样有两个问题。第一，通过AOF做冷备没有RDB做冷备恢复速度快; 第二，RDB每次简单粗暴生成数据快照，更加健壮，可以避免AOF这种复杂的备份和恢复机制的bug。 综合使用AOF和RDB两种持久化机制，用AOF来保证数据不丢失，作为数据恢复的第一选择; 用RDB来做不同程度的冷备，在AOF文件都丢失或损坏不可用的时候，还可以使用RDB来进行快速的数据恢复。]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[Nginx的几种用途]]></title>
+    <url>%2F2018%2F08%2F05%2FNginx%E7%9A%84%E5%87%A0%E7%A7%8D%E7%94%A8%E9%80%94%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;Nginx常见的几种用途。 静态文件服务器修改nginx.conf12345678910111213141516server &#123; listen 80; server_name localhost; #charset koi8-r; #access_log logs/host.access.log main; location / &#123; #配置静态文件目录 root /root/app/; #配置首页 index index.html index.htm; #autoindex在浏览器显示文件目录 autoindex off; #限制访问速度 set $limit_rate 100k; &#125; &#125; 如果访问出现Nginx 403 Forbidden在nginx.conf头部添加：1user root; 开启gzip在http指令块下添加123456gzip on;gzip_min_length 100;gzip_comp_level 1;gzip_buffers 4 8k;gzip_types text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php image/jpeg img/gif image/png; 反向代理根据路径后缀配置反向代理到tomcat，启动一台tomcat，请求地址 http://localhost/cat1。修改nginx.conf，在serer指令块下添加：123location /cat1 &#123; proxy_pass http://localhost:8081/;&#125; 配置成功后，cat1后缀的链接都会被代理到Nginx服务器的8081端口上。 负载均衡修改nginx.conf，在http指令块下添加：1234upstream cat &#123; server localhost:8081; server localhost:8082;&#125; server指令块下添加:123location /cat &#123; proxy_pass http://cat/;&#125;]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+  </entry>
+  <entry>
+    <title><![CDATA[Nginx安装配置]]></title>
+    <url>%2F2018%2F07%2F05%2FNginx%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE%2F</url>
+    <content type="text"><![CDATA[&emsp;&emsp;Nginx安装配置。 安装依赖环境1、首先检查GCC是否安装，命令：gcc -v ,如果显示有相关版本信息，则说明已经安装好，没有就安装：1yum install -y gcc 2、PCRE库，Nginx的HTTP模块要用它来解析正则表达式。1yum install -y pcre pcre-devel 3、OpenSSL库1yum install -y openssl openssl-devel 安装下载1wget http://nginx.org/download/nginx-1.14.0.tar.gz 解压安装12345tar -zxvf nginx-1.14.0.tar.gzcd nginx-1.14.0/./configure --prefix=/usr/local/nginxmakemake install 常用命令123456/usr/local/nginx/sbin/nginx #默认启动方式/usr/local/nginx/sbin/nginx -t #测试配置信息/usr/local/nginx/sbin/nginx -v #显示版本信息，-V（大V）显示编译时的参数/usr/local/nginx/sbin/nginx -s stop #快速停止服务/usr/local/nginx/sbin/nginx -s quit #正常停止服务/usr/local/nginx/sbin/nginx -s reload #重启 设置为开机自启动启动脚本123456789101112131415161718192021222324252627282930313233343536373839404142434445464748#! /bin/bash# chkconfig: - 85 15PATH=/usr/local/nginxDESC=&quot;nginx daemon&quot;NAME=nginxDAEMON=$PATH/sbin/$NAMECONFIGFILE=$PATH/conf/$NAME.confPIDFILE=$PATH/logs/$NAME.pidSCRIPTNAME=/etc/init.d/$NAMEset -e[ -x &quot;$DAEMON&quot; ] || exit 0do_start() &#123;$DAEMON -c $CONFIGFILE || echo -n &quot;nginx already running&quot;&#125;do_stop() &#123;$DAEMON -s stop || echo -n &quot;nginx not running&quot;&#125;do_reload() &#123;$DAEMON -s reload || echo -n &quot;nginx can&apos;t reload&quot;&#125;case &quot;$1&quot; instart)echo -n &quot;Starting $DESC: $NAME&quot;do_startecho &quot;.&quot;;;stop)echo -n &quot;Stopping $DESC: $NAME&quot;do_stopecho &quot;.&quot;;;reload|graceful)echo -n &quot;Reloading $DESC configuration...&quot;do_reloadecho &quot;.&quot;;;restart)echo -n &quot;Restarting $DESC: $NAME&quot;do_stopdo_startecho &quot;.&quot;;;*)echo &quot;Usage: $SCRIPTNAME &#123;start|stop|reload|restart&#125;&quot; &gt;&amp;2exit 3;;esacexit 0 设置执行权限1chmod a+x /etc/init.d/nginx 注册成服务并且开机自启12chkconfig --add nginxchkconfig nginx on 命令1service nginx start|stop|reload|restart 配置vim支持nginx.conf语法高亮去解压开的nginx目录，拷贝nginx.vim到vim安装目录下，并且配置vim12cd nginx-1.14.0/cp contrib/vim/syntax/nginx.vim /usr/share/vim/vim74/syntax/ 1vim /usr/share/vim/vim74/filetype.vim 末尾添加以下内容，/usr/local/nginx/conf/*为nginx make install的目录1au BufRead,BufNewFile /usr/local/nginx/conf/* set ft=nginx]]></content>
+      <categories>
+        <category>Nginx</category>
+      </categories>
+      <tags>
+        <tag>环境搭建</tag>
+      </tags>
+  </entry>
+  <entry>
     <title><![CDATA[centos下redis的安装及配置]]></title>
     <url>%2F2018%2F06%2F11%2Fcentos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE%2F</url>
     <content type="text"><![CDATA[安装redis依赖12yum install -y gcc-c++yum install -y tcl 下载redis并安装12345cd /usr/local/wget http://download.redis.io/releases/redis-3.2.9.tar.gztar -zxvf redis-3.2.9.tar.gzcd redis-3.2.9 make &amp;&amp; make test &amp;&amp; make install redis的生产环境启动方案第一步:&emsp;将redis utils目录下redis_init_script脚本,copy到/etc/init.d目录中,将redis_init_script重命名为redis_7000,7000是这个redis实例监听的端口号.给脚本读写执行的权限. 1234cp ./utils/redis_init_script /etc/init.d/cd /etc/init.dmv redis_init_script redis_7000chmod 777 redis_7000 第二步:&emsp;修改redis_7000脚本的第6行的REDISPORT，设置为相同的端口号(7000),并在顶部加上以下内容.让脚本开机执行. 12# chkconfig: 2345 90 10# description: Redis is a persistent key-value database 1chkconfig redis_7000 on 第三步:&emsp;创建两个目录：/etc/redis（存放redis的配置文件），/var/redis/7000（存放redis的持久化文件）. 123mkdir /etc/redismkdir /var/redismkdir /var/redis/7000 第四步:&emsp;修改redis配置文件（默认在redis安装目录下，redis.conf），拷贝到/etc/redis目录中，修改名称为7000.conf.要修改的配置为: 1234daemonize yes pidfile /var/run/redis_7000.pid port 7000dir /var/redis/7000 1cd /usr/local/redis-3.2.9 12cp ./redis.conf /etc/redismv redis.conf 7000.conf 第五步:&emsp;启动redis 12./redis_7000 startps -ef | grep redis redis-cli的使用连接本机的端口停止redis进程,ip为本机,端口为6379时可不写 1redis-cli -h 127.0.0.1 -p 7000 SHUTDOWN， ping redis的端口，查看是否正常 1redis-cli -p 7000 PING 进入交互式命令行 1redis-cli -p 7000 接着就可以使用redis存取命令操作redis。]]></content>
       <categories>
-        <category>环境搭建</category>
+        <category>Redis</category>
       </categories>
       <tags>
-        <tag>Redis</tag>
+        <tag>环境搭建</tag>
       </tags>
   </entry>
   <entry>
