@@ -4,6 +4,74 @@
 
     
   <url>
+    <loc>https://zhaibo.ink/2019/11/12/SpringCloud%E5%BA%94%E7%94%A8%E6%8C%87%E6%A0%87%E7%9B%91%E6%8E%A7%EF%BC%9APrometheus-Grafana/</loc>
+    <lastmod>2019-12-05T07:11:15.712Z</lastmod>
+    <data>
+        <display>
+        <title>SpringCloud应用指标监控：Prometheus+Grafana</title>
+        <pubTime>2019-11-12T07:59:01.000Z</pubTime>
+        
+        <tag>SpringCloud</tag>
+         
+        <tag>Prometheus</tag>
+         
+        <tag>Grafana</tag>
+         
+         
+           
+             
+              <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/11/16/SpringCloud%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%EF%BC%9APinpoint/</loc>
+    <lastmod>2019-12-05T07:06:07.521Z</lastmod>
+    <data>
+        <display>
+        <title>SpringCloud链路追踪：Pinpoint</title>
+        <pubTime>2019-11-16T06:59:30.000Z</pubTime>
+        
+        <tag>SpringCloud</tag>
+         
+        <tag>Pinpoint</tag>
+         
+         
+           
+             
+              <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
+    <loc>https://zhaibo.ink/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</loc>
+    <lastmod>2019-12-05T07:05:29.718Z</lastmod>
+    <data>
+        <display>
+        <title>SpringCloud日志集中化处理：ELK+Kafka</title>
+        <pubTime>2019-11-08T00:54:56.000Z</pubTime>
+        
+        <tag>SpringCloud</tag>
+         
+        <tag>ELK</tag>
+         
+         
+           
+             
+              <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
+          
+        </display>
+    </data>
+    </url>
+
+    
+  <url>
     <loc>https://zhaibo.ink/2019/10/10/Redis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/</loc>
     <lastmod>2019-12-03T03:04:52.433Z</lastmod>
     <data>
@@ -17,26 +85,6 @@
            
              
               <breadCrumb title="缓存" url="https://zhaibo.ink/categories/%E7%BC%93%E5%AD%98/"/>
-          
-        </display>
-    </data>
-    </url>
-
-    
-  <url>
-    <loc>https://zhaibo.ink/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</loc>
-    <lastmod>2019-12-02T05:46:53.555Z</lastmod>
-    <data>
-        <display>
-        <title>SpringCloud日志集中化处理：ELK+Kafka</title>
-        <pubTime>2019-11-08T00:54:56.000Z</pubTime>
-        
-        <tag>SpringCloud</tag>
-         
-         
-           
-             
-              <breadCrumb title="微服务" url="https://zhaibo.ink/categories/%E5%BE%AE%E6%9C%8D%E5%8A%A1/"/>
           
         </display>
     </data>
