@@ -2,6 +2,20 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
+    <loc>https://zhaibo.ink/2019/11/20/SpringCloud%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%EF%BC%9ASpring-Cloud-Alibaba-Sentinel/</loc>
+    
+    <lastmod>2019-12-07T06:05:37.884Z</lastmod>
+    
+  </url>
+  
+  <url>
+    <loc>https://zhaibo.ink/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</loc>
+    
+    <lastmod>2019-12-07T05:59:16.546Z</lastmod>
+    
+  </url>
+  
+  <url>
     <loc>https://zhaibo.ink/2019/08/05/Redis%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93/</loc>
     
     <lastmod>2019-12-05T12:06:25.417Z</lastmod>
@@ -82,13 +96,6 @@
     <loc>https://zhaibo.ink/2019/11/16/SpringCloud%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%EF%BC%9APinpoint/</loc>
     
     <lastmod>2019-12-05T07:06:07.521Z</lastmod>
-    
-  </url>
-  
-  <url>
-    <loc>https://zhaibo.ink/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</loc>
-    
-    <lastmod>2019-12-05T07:05:29.718Z</lastmod>
     
   </url>
   
