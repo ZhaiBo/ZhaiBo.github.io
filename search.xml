@@ -1,9 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
-    <title><![CDATA[基于SpringCloud（Greenwich.SR2）搭建的微服务脚手架（适用于在线系统）]]></title>
-    <url>%2F2019%2F11%2F24%2F%E5%9F%BA%E4%BA%8ESpringCloud%EF%BC%88Greenwich-SR2%EF%BC%89%E6%90%AD%E5%BB%BA%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%84%9A%E6%89%8B%E6%9E%B6%EF%BC%88%E9%80%82%E7%94%A8%E4%BA%8E%E5%9C%A8%E7%BA%BF%E7%B3%BB%E7%BB%9F%EF%BC%89%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章介绍博主自己搭建的脚手架开源项目。 项目代码已上传至github：https://github.com/ZhaiBo/microservice-scaffold microservice-scaffold基于Spring Cloud（Greenwich.SR2）搭建的微服务脚手架，已集成注册中心（Nacos Config）、配置中心（Nacos Discovery）、认证授权（Oauth2 + JWT）、日志处理（ELK + Kafka）、限流熔断（AliBaba Sentinel）、应用指标监控（Prometheus + Grafana）、调用链监控（Pinpoint）、以及Spring Boot Admin。 快速开始依赖环境： java8 docker git maven 基础环境搭建nacos当前应用配置文件在config/example下，需要导入到nacos中，nacos官方文档 elk + kafka进入config/docker-env/kafka-docker目录下，执行：docker-compose up -d；进入config/docker-env/docker-elk目录下，执行：docker-compose up -d即可。可参考：Spring Cloud日志集中化处理：ELK + Kafka prometheus + grafana进入config/docker-env/prometheus目录下，执行：docker-compose up -d即可。可参考：Spring Cloud应用指标监控：Prometheus + Grafana pinpoint进入config/docker-env/prometheus目录下，执行：docker-compose pull &amp;&amp; docker-compose up -d即可。可参考：Spring Cloud链路追踪：Pinpoint 创建数据库及表导入根路径db/目录下各模块下数据库脚本，可创建一个库或者分模块创建。 启动应用将工程导入idea，逐个启动SpringBoot应用即可。所依赖的基础服务如下： 基础服务 服务名 端口 说明 KV缓存 redis 6379 目前用于存储JWT生成的access_token 数据库 mysql 3306 消息中间件 kafka 9092 与ELK集成 注册与配置中心 nacos 8848 日志处理 elk es:9200,kibana:5601,logstash:5000 应用指标监控 prometheus 9090 共用 数据可视化工具 grafana 3000 调用链路监控 pinpoint 8079 spring boot admin pinpoint 8100 限流熔断 alibaba sentinel 8858 各模块依赖服务： 服务名称 说明 依赖 服务端口 auth 认证服务器 mysql、redis 8190 api-gateway api网关 redis 8088 web-app 服务聚合层 alibaba sentinel 8087 user-svc 用户服务 mysql 8000 springboot admin 应用监控 8100 目前，仅完成基础框架搭建和统一报文、统一异常处理，暂未确定做什么业务。]]></content>
+    <title>基于SpringCloud（Greenwich.SR2）搭建的微服务脚手架（适用于在线系统）</title>
+    <url>/2019/11/24/%E5%9F%BA%E4%BA%8ESpringCloud%EF%BC%88Greenwich-SR2%EF%BC%89%E6%90%AD%E5%BB%BA%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%84%9A%E6%89%8B%E6%9E%B6%EF%BC%88%E9%80%82%E7%94%A8%E4%BA%8E%E5%9C%A8%E7%BA%BF%E7%B3%BB%E7%BB%9F%EF%BC%89/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章介绍博主自己搭建的脚手架开源项目。</p></div><a id="more"></a> 
+<p>项目代码已上传至github：<br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<h2 id="microservice-scaffold"><a href="#microservice-scaffold" class="headerlink" title="microservice-scaffold"></a>microservice-scaffold</h2><p>基于Spring Cloud（Greenwich.SR2）搭建的微服务脚手架，已集成注册中心（Nacos Config）、配置中心（Nacos Discovery）、认证授权（Oauth2 + JWT）、日志处理（ELK + Kafka）、限流熔断（AliBaba Sentinel）、应用指标监控（Prometheus + Grafana）、调用链监控（Pinpoint）、以及Spring Boot Admin。</p>
+<h2 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h2><p>依赖环境：</p>
+<ul>
+<li><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="noopener">java8</a> </li>
+<li><a href="https://www.docker.com/" target="_blank" rel="noopener">docker</a> </li>
+<li><a href="https://git-scm.com/" target="_blank" rel="noopener">git</a></li>
+<li><a href="http://maven.apache.org/" target="_blank" rel="noopener">maven</a> </li>
+</ul>
+<h3 id="基础环境搭建"><a href="#基础环境搭建" class="headerlink" title="基础环境搭建"></a>基础环境搭建</h3><h4 id="nacos"><a href="#nacos" class="headerlink" title="nacos"></a>nacos</h4><p>当前应用配置文件在config/example下，需要导入到nacos中，<a href="https://editor.csdn.net/md/?articleId=103337840" target="_blank" rel="noopener">nacos官方文档</a></p>
+<h4 id="elk-kafka"><a href="#elk-kafka" class="headerlink" title="elk + kafka"></a>elk + kafka</h4><p>进入config/docker-env/kafka-docker目录下，执行：<code>docker-compose up -d</code>；进入config/docker-env/docker-elk目录下，执行：<code>docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=102717007" target="_blank" rel="noopener">Spring Cloud日志集中化处理：ELK + Kafka</a></p>
+<h4 id="prometheus-grafana"><a href="#prometheus-grafana" class="headerlink" title="prometheus + grafana"></a>prometheus + grafana</h4><p>进入config/docker-env/prometheus目录下，执行：<code>docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=103337840" target="_blank" rel="noopener">Spring Cloud应用指标监控：Prometheus + Grafana</a></p>
+<h4 id="pinpoint"><a href="#pinpoint" class="headerlink" title="pinpoint"></a>pinpoint</h4><p>进入config/docker-env/prometheus目录下，执行：<code>docker-compose pull &amp;&amp; docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=103335777" target="_blank" rel="noopener">Spring Cloud链路追踪：Pinpoint</a></p>
+<h3 id="创建数据库及表"><a href="#创建数据库及表" class="headerlink" title="创建数据库及表"></a>创建数据库及表</h3><p>导入根路径db/目录下各模块下数据库脚本，可创建一个库或者分模块创建。</p>
+<h3 id="启动应用"><a href="#启动应用" class="headerlink" title="启动应用"></a>启动应用</h3><p>将工程导入idea，逐个启动SpringBoot应用即可。所依赖的基础服务如下：</p>
+<table>
+<thead>
+<tr>
+<th>基础服务</th>
+<th>服务名</th>
+<th>端口</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KV缓存</td>
+<td>redis</td>
+<td>6379</td>
+<td>目前用于存储JWT生成的access_token</td>
+</tr>
+<tr>
+<td>数据库</td>
+<td>mysql</td>
+<td>3306</td>
+<td></td>
+</tr>
+<tr>
+<td>消息中间件</td>
+<td>kafka</td>
+<td>9092</td>
+<td>与ELK集成</td>
+</tr>
+<tr>
+<td>注册与配置中心</td>
+<td>nacos</td>
+<td>8848</td>
+<td></td>
+</tr>
+<tr>
+<td>日志处理</td>
+<td>elk</td>
+<td>es:9200,kibana:5601,logstash:5000</td>
+<td></td>
+</tr>
+<tr>
+<td>应用指标监控</td>
+<td>prometheus</td>
+<td>9090</td>
+<td>共用</td>
+</tr>
+<tr>
+<td>数据可视化工具</td>
+<td>grafana</td>
+<td>3000</td>
+<td></td>
+</tr>
+<tr>
+<td>调用链路监控</td>
+<td>pinpoint</td>
+<td>8079</td>
+<td></td>
+</tr>
+<tr>
+<td>spring boot admin</td>
+<td>pinpoint</td>
+<td>8100</td>
+<td></td>
+</tr>
+<tr>
+<td>限流熔断</td>
+<td>alibaba sentinel</td>
+<td>8858</td>
+</tr>
+</tbody>
+</table>
+<p>各模块依赖服务：</p>
+<table>
+<thead>
+<tr>
+<th>服务名称</th>
+<th>说明</th>
+<th>依赖</th>
+<th>服务端口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auth</td>
+<td>认证服务器</td>
+<td>mysql、redis</td>
+<td>8190</td>
+</tr>
+<tr>
+<td>api-gateway</td>
+<td>api网关</td>
+<td>redis</td>
+<td>8088</td>
+</tr>
+<tr>
+<td>web-app</td>
+<td>服务聚合层</td>
+<td>alibaba sentinel</td>
+<td>8087</td>
+</tr>
+<tr>
+<td>user-svc</td>
+<td>用户服务</td>
+<td>mysql</td>
+<td>8000</td>
+</tr>
+<tr>
+<td>springboot admin</td>
+<td>应用监控</td>
+<td></td>
+<td>8100</td>
+</tr>
+</tbody>
+</table>
+<p>目前，仅完成基础框架搭建和统一报文、统一异常处理，暂未确定做什么业务。</p>
+]]></content>
       <categories>
         <category>微服务</category>
       </categories>
@@ -12,18 +143,51 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[SpringCloud限流熔断：Spring-Cloud-Alibaba-Sentinel]]></title>
-    <url>%2F2019%2F11%2F20%2FSpringCloud%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%EF%BC%9ASpring-Cloud-Alibaba-Sentinel%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章演示使用Spring Cloud Alibaba Sentinel做可灵活配置的限流熔断。 本文示例代码已上传至github：https://github.com/ZhaiBo/microservice-scaffold Spring Cloud Alibaba Sentinel官方文档 Spring Cloud集成Sentinel因为我们是要集成到SpringCloud中，所以使用官方提供的spring-cloud-starter-alibaba-sentinel。 maven配置12345&lt;dependency&gt; &lt;groupId&gt;com.alibaba.cloud&lt;/groupId&gt; &lt;artifactId&gt;spring-cloud-starter-alibaba-sentinel&lt;/artifactId&gt; &lt;version&gt;2.1.1.RELEASE&lt;/version&gt;&lt;/dependency&gt; 配置application.yml123456spring: cloud: sentinel: transport: port: 8719 dashboard: localhost:8080 定义资源在需要限流的接口上添加@SentinelResource注解，如图： 下载sentinel-dashborad下载地址：sentinel-dashborad下载可根据需要直接下载jar包，或者下载源码使用mvn clean package命令打包。sentinel-dashborad启动命令：java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.7.0.jar 启动SpringBoot应用启动应用，访问localhost:8080，登录( 账户/密码：sentinel/sentinel )后可以看到此页面，一定要发起所定义资源的api调用才会在控制台看到自己应用的数据： 限流通过配置限流规则，对资源进行限流。配置完成后保存，再快速发起多次请求，可以看到控制台报错，实际可根据异常，转换为对应的错误信息。 降级当某个应用超时，或者异常时，对其进行降级，防止拖垮整个应用，造成服务雪崩。 配置降级规则 修改Feign配置在maven配置中增加1234&lt;dependency&gt; &lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt; &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;&lt;/dependency&gt; 修改application.yml123456789spring: cloud: sentinel: transport: port: 8719 dashboard: localhost:8080feign: sentinel: enabled: true 完成后，进行服务测试，上面的配置是60秒中有5次异常就打开降级开关，即使停止user模块，也不会服务异常。当前应用部分代码： sentinel规则持久化由于本次注册中心使用的nacos config，所以将sentinel规则持久化到nacos。 maven配置12345&lt;dependency&gt; &lt;groupId&gt;com.alibaba.csp&lt;/groupId&gt; &lt;artifactId&gt;sentinel-datasource-nacos&lt;/artifactId&gt; &lt;version&gt;1.7.0&lt;/version&gt;&lt;/dependency&gt; 配置application.yml其实就是指定要使用nacos的哪个配置文件。12345678910111213spring: cloud: sentinel: transport: port: 8719 dashboard: localhost:8080 datasource: ds: nacos: server-addr: localhost:8848 dataId: $&#123;spring.application.name&#125;-sentinel-rules groupId: DEFAULT_GROUP ruleType: flow nacos配置新增配置文件，需要注意的是文件名称要和application.yml中配置的配置文件前缀对上，不然将读不到配置文件。 验证配置发布之后，再来查看sentinel dashborad，可以看到，nacos中新增的配置，已经被读取到sentinel控制台了。如果需要修改规则配置，直接修改nacos的配置文件就行了，会同步到sentinel。nacos的配置是可以持久化到数据库的，这样就相当于sentinel的规则已经被存储到数据库了。查看数据库，可以看到sentinel配置文件已经被保存到数据库里。 总结sentinel规则配置灵活，除了本文演示的，还有许多可配置的规则，实际使用时，可查看官方文档，根据实际业务灵活配置。]]></content>
+    <title>SpringCloud限流熔断：Spring-Cloud-Alibaba-Sentinel</title>
+    <url>/2019/11/20/SpringCloud%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%EF%BC%9ASpring-Cloud-Alibaba-Sentinel/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章演示使用Spring Cloud Alibaba Sentinel做可灵活配置的限流熔断。</p></div><a id="more"></a> 
+<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<p><a href="https://github.com/alibaba/spring-cloud-alibaba/wiki/Sentinel" target="_blank" rel="noopener">Spring Cloud Alibaba Sentinel官方文档</a></p>
+<h5 id="Spring-Cloud集成Sentinel"><a href="#Spring-Cloud集成Sentinel" class="headerlink" title="Spring Cloud集成Sentinel"></a>Spring Cloud集成Sentinel</h5><p>因为我们是要集成到SpringCloud中，所以使用官方提供的spring-cloud-starter-alibaba-sentinel。</p>
+<h6 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;com.alibaba.cloud&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-cloud-starter-alibaba-sentinel&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.1.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="配置application-yml"><a href="#配置application-yml" class="headerlink" title="配置application.yml"></a>配置application.yml</h6><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br></pre></td></tr></table></figure>
+<h6 id="定义资源"><a href="#定义资源" class="headerlink" title="定义资源"></a>定义资源</h6><p>在需要限流的接口上添加@SentinelResource注解，如图：<br><img src="https://img-blog.csdnimg.cn/20191206171806564.png" alt="在这里插入图片描述"></p>
+<h6 id="下载sentinel-dashborad"><a href="#下载sentinel-dashborad" class="headerlink" title="下载sentinel-dashborad"></a>下载sentinel-dashborad</h6><p>下载地址：<a href="https://github.com/alibaba/Sentinel/releases" target="_blank" rel="noopener">sentinel-dashborad下载</a><br>可根据需要直接下载jar包，或者下载源码使用<code>mvn clean package</code>命令打包。<br>sentinel-dashborad启动命令：<code>java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.7.0.jar</code></p>
+<h6 id="启动SpringBoot应用"><a href="#启动SpringBoot应用" class="headerlink" title="启动SpringBoot应用"></a>启动SpringBoot应用</h6><p>启动应用，访问<code>localhost:8080</code>，登录( 账户/密码：sentinel/sentinel )后可以看到此页面，一定要发起所定义资源的api调用才会在控制台看到自己应用的数据：<br><img src="https://img-blog.csdnimg.cn/2019120617204778.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h5><p>通过配置限流规则，对资源进行限流。<br><img src="https://img-blog.csdnimg.cn/20191206172208512.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>配置完成后保存，再快速发起多次请求，可以看到控制台报错，实际可根据异常，转换为对应的错误信息。<br><img src="https://img-blog.csdnimg.cn/20191206115000338.png" alt="在这里插入图片描述"></p>
+<h5 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h5><p>当某个应用超时，或者异常时，对其进行降级，防止拖垮整个应用，造成服务雪崩。</p>
+<h6 id="配置降级规则"><a href="#配置降级规则" class="headerlink" title="配置降级规则"></a>配置降级规则</h6><p><img src="https://img-blog.csdnimg.cn/20191206181602299.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="修改Feign配置"><a href="#修改Feign配置" class="headerlink" title="修改Feign配置"></a>修改Feign配置</h6><p>在maven配置中增加<br><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<h6 id="修改application-yml"><a href="#修改application-yml" class="headerlink" title="修改application.yml"></a>修改application.yml</h6><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br><span class="line"><span class="attr">feign:</span></span><br><span class="line">  <span class="attr">sentinel:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>完成后，进行服务测试，上面的配置是60秒中有5次异常就打开降级开关，即使停止user模块，也不会服务异常。<br>当前应用部分代码：<br><img src="https://img-blog.csdnimg.cn/20191206180501452.png" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20191206180508996.png" alt="在这里插入图片描述"></p>
+<h5 id="sentinel规则持久化"><a href="#sentinel规则持久化" class="headerlink" title="sentinel规则持久化"></a>sentinel规则持久化</h5><p>由于本次注册中心使用的nacos config，所以将sentinel规则持久化到nacos。</p>
+<h6 id="maven配置-1"><a href="#maven配置-1" class="headerlink" title="maven配置"></a>maven配置</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;com.alibaba.csp&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;sentinel-datasource-nacos&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="配置application-yml-1"><a href="#配置application-yml-1" class="headerlink" title="配置application.yml"></a>配置application.yml</h6><p>其实就是指定要使用nacos的哪个配置文件。<br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br><span class="line">      <span class="attr">datasource:</span></span><br><span class="line">        <span class="attr">ds:</span></span><br><span class="line">          <span class="attr">nacos:</span></span><br><span class="line">            <span class="attr">server-addr:</span> <span class="string">localhost:8848</span></span><br><span class="line">            <span class="attr">dataId:</span> <span class="string">$&#123;spring.application.name&#125;-sentinel-rules</span></span><br><span class="line">            <span class="attr">groupId:</span> <span class="string">DEFAULT_GROUP</span></span><br><span class="line">            <span class="attr">ruleType:</span> <span class="string">flow</span></span><br></pre></td></tr></table></figure></p>
+<h6 id="nacos配置"><a href="#nacos配置" class="headerlink" title="nacos配置"></a>nacos配置</h6><p>新增配置文件，需要注意的是文件名称要和application.yml中配置的配置文件前缀对上，不然将读不到配置文件。<br><img src="https://img-blog.csdnimg.cn/2019120713414244.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>配置发布之后，再来查看sentinel dashborad，可以看到，nacos中新增的配置，已经被读取到sentinel控制台了。如果需要修改规则配置，直接修改nacos的配置文件就行了，会同步到sentinel。<br><img src="https://img-blog.csdnimg.cn/20191207135204757.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>nacos的配置是可以持久化到数据库的，这样就相当于sentinel的规则已经被存储到数据库了。查看数据库，可以看到sentinel配置文件已经被保存到数据库里。<br><img src="https://img-blog.csdnimg.cn/20191207134950611.png" alt="在这里插入图片描述"></p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>sentinel规则配置灵活，除了本文演示的，还有许多可配置的规则，实际使用时，可查看官方文档，根据实际业务灵活配置。</p>
+]]></content>
       <tags>
         <tag>SpringCloud</tag>
         <tag>Alibaba Sentinel</tag>
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[SpringCloud链路追踪：Pinpoint]]></title>
-    <url>%2F2019%2F11%2F16%2FSpringCloud%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%EF%BC%9APinpoint%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章演示使用Pinpoint做SpringCloud链路追踪。 本文示例代码已上传至github：https://github.com/ZhaiBo/microservice-scaffoldPinpoint 1.8.5文档：https://naver.github.io/pinpoint/1.8.5/docker.html 安装Pinpoint使用官方提供的docker-compose快速安装Pinpoint。 克隆代码到本地使用此命令克隆pinpoint-docker到本地，git clone https://github.com/naver/pinpoint-docker.git可以看到如下文件： 启动1docker-compose pull &amp;&amp; docker-compose up -d 看到控制台打印以下信息，说明启动完成： 验证访问localhost:8079，看到如下页面，即代表启动成功，但此时是没有应用信息的，需要我们使用pinpoint-agent来收集SpringBoot应用的调用链路数据。此外，也可查看Habse的WebUI地址：http://localhost:16010 SpringBoot应用整合打开Pinpoint WebUI点击右上角设置按钮可以看到这个界面，点击Installation可看到集成教程。 下载配置Pinpoint Agent首先下载Pinpoint Agentpinpoint-agent-1.8.5.tar.gz解压后，修改配置文件：1.修改第8行为Pinpoint部署ip2.在第184行添加应用类型SPRING_BOOT3.在第420行添加SpringBoot启动类全路径，多个用逗号隔开。 javaagent方式启动SpringBoot应用启动javaagent方式启动SpringBoot应用：1java -javaagent:./pinpoint-agent-1.8.5/pinpoint-bootstrap-1.8.5.jar -Dpinpoint.applicationName=remote-user-svc -Dpinpoint.agentId=00009 -jar ./user-svc-1.0-SNAPSHOT.jar 发起SpringBoot应用的api调用，完成后，查看Pinpoint WebUI，可以看到应用链路的调用图表：也可查看对应的JVM使用情况：如果要看到整个服务调用的链路，需要在pinpoint配置文件中添加各个模块的启动类，并且以javaagent方式启动应用。 注意pinpoint-agent在windows下似乎是不能收集到调用链路数据的，只能收集到jvm数据。windows下这种方式启动SpringBoot应用控制台会输出：最终，是将应用打成jar包，在CentOS下才成功收集到调用链数据。]]></content>
+    <title>SpringCloud链路追踪：Pinpoint</title>
+    <url>/2019/11/16/SpringCloud%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%EF%BC%9APinpoint/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章演示使用Pinpoint做SpringCloud链路追踪。</p></div><a id="more"></a> 
+<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a><br><strong>Pinpoint 1.8.5文档：</strong><br><a href="https://naver.github.io/pinpoint/1.8.5/docker.html" target="_blank" rel="noopener">https://naver.github.io/pinpoint/1.8.5/docker.html</a></p>
+<h5 id="安装Pinpoint"><a href="#安装Pinpoint" class="headerlink" title="安装Pinpoint"></a>安装Pinpoint</h5><p>使用官方提供的docker-compose快速安装Pinpoint。</p>
+<h6 id="克隆代码到本地"><a href="#克隆代码到本地" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆pinpoint-docker到本地，<code>git clone https://github.com/naver/pinpoint-docker.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191203183148896.png" alt="在这里插入图片描述"></p>
+<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose pull &amp;&amp; docker-compose up -d</span><br></pre></td></tr></table></figure>
+<p>看到控制台打印以下信息，说明启动完成：<br><img src="https://img-blog.csdnimg.cn/20191203180255169.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问<code>localhost:8079</code>，看到如下页面，即代表启动成功，但此时是没有应用信息的，需要我们使用pinpoint-agent来收集SpringBoot应用的调用链路数据。<br><img src="https://img-blog.csdnimg.cn/20191203183103727.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>此外，也可查看Habse的WebUI地址：<code>http://localhost:16010</code><br><img src="https://img-blog.csdnimg.cn/20191203183506426.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="SpringBoot应用整合"><a href="#SpringBoot应用整合" class="headerlink" title="SpringBoot应用整合"></a>SpringBoot应用整合</h5><p>打开Pinpoint WebUI点击右上角设置按钮可以看到这个界面，点击Installation可看到集成教程。<br><img src="https://img-blog.csdnimg.cn/20191205085713531.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="下载配置Pinpoint-Agent"><a href="#下载配置Pinpoint-Agent" class="headerlink" title="下载配置Pinpoint Agent"></a>下载配置Pinpoint Agent</h6><p>首先下载Pinpoint Agent<br><a href="https://github.com/naver/pinpoint/releases/download/1.8.5/pinpoint-agent-1.8.5.tar.gz" target="_blank" rel="noopener">pinpoint-agent-1.8.5.tar.gz</a><br>解压后，修改配置文件：<br>1.修改第8行为Pinpoint部署ip<br><img src="https://img-blog.csdnimg.cn/20191204084204295.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>2.在第184行添加应用类型SPRING_BOOT<br><img src="https://img-blog.csdnimg.cn/20191204084306553.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3.在第420行添加SpringBoot启动类全路径，多个用逗号隔开。<br><img src="https://img-blog.csdnimg.cn/20191205123507521.png" alt="在这里插入图片描述"></p>
+<h6 id="javaagent方式启动SpringBoot应用启动"><a href="#javaagent方式启动SpringBoot应用启动" class="headerlink" title="javaagent方式启动SpringBoot应用启动"></a>javaagent方式启动SpringBoot应用启动</h6><p>javaagent方式启动SpringBoot应用：<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">java -javaagent:./pinpoint-agent-1.8.5/pinpoint-bootstrap-1.8.5.jar -Dpinpoint.applicationName=remote-user-svc -Dpinpoint.agentId=00009 -jar ./user-svc-1.0-SNAPSHOT.jar</span><br></pre></td></tr></table></figure></p>
+<p>发起SpringBoot应用的api调用，完成后，查看Pinpoint WebUI，可以看到应用链路的调用图表：<br><img src="https://img-blog.csdnimg.cn/20191205114818228.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>也可查看对应的JVM使用情况：<br><img src="https://img-blog.csdnimg.cn/2019120511504629.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>如果要看到整个服务调用的链路，需要在pinpoint配置文件中添加各个模块的启动类，并且以javaagent方式启动应用。</p>
+<h5 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h5><p>pinpoint-agent在windows下似乎是不能收集到调用链路数据的，只能收集到jvm数据。<br>windows下这种方式启动SpringBoot应用控制台会输出：<br><img src="https://img-blog.csdnimg.cn/20191205122743247.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20191205122851697.png" alt="在这里插入图片描述"><br>最终，是将应用打成jar包，在CentOS下才成功收集到调用链数据。</p>
+]]></content>
       <categories>
         <category>微服务</category>
       </categories>
@@ -33,9 +197,22 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[SpringCloud应用指标监控：Prometheus+Grafana]]></title>
-    <url>%2F2019%2F11%2F12%2FSpringCloud%E5%BA%94%E7%94%A8%E6%8C%87%E6%A0%87%E7%9B%91%E6%8E%A7%EF%BC%9APrometheus-Grafana%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章演示使用Prometheus和Grafana做SpringCloud应用指标监控。 本文示例代码已上传至github：https://github.com/ZhaiBo/microservice-scaffold 本文参考资料：Prometheus文档Grafana文档 Docker方式安装Prometheus + Grafana克隆使用github上开源项目快速搭建Prometheus + Grafana环境。git clone https://github.com/vegasbrianc/prometheus.git 修改配置修改下图配置文件内容，在scrape_configs属性下添加一个job，去抓取SpringBoot的metrics数据。12345678910- job_name: 'user-svc' # Override the global default and scrape targets from this job every 5 seconds. scrape_interval: 5s metrics_path: '/actuator/prometheus' static_configs: - targets: ['host.docker.internal:8087'] # 这里修改为需要抓取数据的应用端口 labels: application: 'user-svc' 启动直接后台启动。1docker-compose up -d 验证访问Prometheus控制台：http://localhost:9090/targets，此时，由于SpringBoot应用还未配置启动，可以看到上面配置的job是DOWN状态。 SpringBoot应用集成Prometheus引入以下maven包12345678&lt;dependency&gt; &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt; &lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;&lt;/dependency&gt;&lt;dependency&gt; &lt;groupId&gt;io.micrometer&lt;/groupId&gt; &lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;&lt;/dependency&gt; 修改application.yml添加以下配置：1234567management: endpoints: promethus: enable: true web: exposure: include: '*' 启动验证启动SpringBoot应用，访问：http://localhost:8087/actuator/prometheus看到返回下面信息，就说明配置已经生效了。再去Prometheus控制台查看，可以看到我们配置的Job状态已经是UP状态： Grafana配置数据源访问Grafana控制台：地址：localhost:3000，用户名/密码：admin/foobar。用户名密码可去/grafana/config.monitoring下修改。登录成功后配置Prometheus的数据源： Grafana导入DashboradGrafana官网提供现成的Jvm Dashborad，可去此链接查看：https://grafana.com/grafana/dashboards/4701，将复制到的Id填入：选择prometheus数据源：完成后可以看到jvm相关的dashborad了： 总结Prometheus支持自定义metrics。Grafana还提供了AlertManager、自定义Dashboard等很丰富的功能，需要使用可去官方文档了解。]]></content>
+    <title>SpringCloud应用指标监控：Prometheus+Grafana</title>
+    <url>/2019/11/12/SpringCloud%E5%BA%94%E7%94%A8%E6%8C%87%E6%A0%87%E7%9B%91%E6%8E%A7%EF%BC%9APrometheus-Grafana/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本篇文章演示使用Prometheus和Grafana做SpringCloud应用指标监控。</p></div><a id="more"></a>
+<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<p><strong>本文参考资料：</strong><br><a href="https://ryanyang.gitbook.io/prometheus/di-yi-zhang-jie-shao/overview" target="_blank" rel="noopener">Prometheus文档</a><br><a href="https://grafana.com/docs/" target="_blank" rel="noopener">Grafana文档</a></p>
+<h5 id="Docker方式安装Prometheus-Grafana"><a href="#Docker方式安装Prometheus-Grafana" class="headerlink" title="Docker方式安装Prometheus + Grafana"></a>Docker方式安装Prometheus + Grafana</h5><h6 id="克隆"><a href="#克隆" class="headerlink" title="克隆"></a>克隆</h6><p>使用github上开源项目快速搭建Prometheus + Grafana环境。<br><code>git clone https://github.com/vegasbrianc/prometheus.git</code></p>
+<h6 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改下图配置文件内容，在scrape_configs属性下添加一个job，去抓取SpringBoot的metrics数据。<br><img src="https://img-blog.csdnimg.cn/20191205142938730.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">'user-svc'</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># Override the global default and scrape targets from this job every 5 seconds.</span></span><br><span class="line">  <span class="attr">scrape_interval:</span> <span class="string">5s</span></span><br><span class="line">  <span class="attr">metrics_path:</span> <span class="string">'/actuator/prometheus'</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">static_configs:</span></span><br><span class="line">       <span class="bullet">-</span> <span class="attr">targets:</span> <span class="string">['host.docker.internal:8087']</span> <span class="comment"># 这里修改为需要抓取数据的应用端口</span></span><br><span class="line">         <span class="attr">labels:</span></span><br><span class="line">           <span class="attr">application:</span> <span class="string">'user-svc'</span></span><br></pre></td></tr></table></figure></p>
+<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><p>直接后台启动。<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问Prometheus控制台：<code>http://localhost:9090/targets</code>，<br>此时，由于SpringBoot应用还未配置启动，可以看到上面配置的job是DOWN状态。<br><img src="https://img-blog.csdnimg.cn/20191205143052153.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="SpringBoot应用集成Prometheus"><a href="#SpringBoot应用集成Prometheus" class="headerlink" title="SpringBoot应用集成Prometheus"></a>SpringBoot应用集成Prometheus</h5><h6 id="引入以下maven包"><a href="#引入以下maven包" class="headerlink" title="引入以下maven包"></a>引入以下maven包</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;io.micrometer&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="修改application-yml"><a href="#修改application-yml" class="headerlink" title="修改application.yml"></a>修改application.yml</h6><p>添加以下配置：<br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">promethus:</span></span><br><span class="line">      <span class="attr">enable:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">'*'</span></span><br></pre></td></tr></table></figure></p>
+<h6 id="启动验证"><a href="#启动验证" class="headerlink" title="启动验证"></a>启动验证</h6><p>启动SpringBoot应用，访问：<code>http://localhost:8087/actuator/prometheus</code><br>看到返回下面信息，就说明配置已经生效了。<br><img src="https://img-blog.csdnimg.cn/20191202195217476.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>再去Prometheus控制台查看，可以看到我们配置的Job状态已经是UP状态：<br><img src="https://img-blog.csdnimg.cn/20191205141311290.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="Grafana配置数据源"><a href="#Grafana配置数据源" class="headerlink" title="Grafana配置数据源"></a>Grafana配置数据源</h5><p>访问Grafana控制台：<br>地址：<code>localhost:3000</code>，用户名/密码：admin/foobar。用户名密码可去/grafana/config.monitoring下修改。登录成功后配置Prometheus的数据源：<br><img src="https://img-blog.csdnimg.cn/2019120514101035.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="Grafana导入Dashborad"><a href="#Grafana导入Dashborad" class="headerlink" title="Grafana导入Dashborad"></a>Grafana导入Dashborad</h5><p>Grafana官网提供现成的Jvm Dashborad，可去此链接查看：<a href="https://grafana.com/grafana/dashboards/4701" target="_blank" rel="noopener">https://grafana.com/grafana/dashboards/4701</a>，<img src="https://img-blog.csdnimg.cn/20191205141728467.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>将复制到的Id填入：<br><img src="https://img-blog.csdnimg.cn/20191205141936293.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>选择prometheus数据源：<br><img src="https://img-blog.csdnimg.cn/20191205142027517.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>完成后可以看到jvm相关的dashborad了：<br><img src="https://img-blog.csdnimg.cn/20191205142112671.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>Prometheus支持自定义metrics。<br>Grafana还提供了AlertManager、自定义Dashboard等很丰富的功能，需要使用可去官方文档了解。</p>
+]]></content>
       <categories>
         <category>微服务</category>
       </categories>
@@ -46,9 +223,39 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[SpringCloud日志集中化处理：ELK+Kafka]]></title>
-    <url>%2F2019%2F11%2F08%2FSpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章演示使用SpringCloud如何整合ELK+Kafka做微服务日志集中化处理。 本文示例代码已上传至github：https://github.com/ZhaiBo/microservice-scaffold 为什么需要对微服务日志做集中化处理在微服务架构下，各个基础服务可能使用集群方式部署在不同的机器上，这样日志查看就变得非常困难，一旦服务出现问题，在大量的日志下很难定位问题，所以就需要对微服务日志进行集中式处理，以便于我们查找、定位问题。ELK是目前主流的日志收集处理方案，具有良好的性能和美观的界面，所以我们采用如下方案来对SpringCloud日志进行集中化处理： 为什么需要kafka原因有两点： 保证LogStash可用性。当业务量增大时，日志跟着增多，直接传入会使LogStash压力过大，可能挂掉，所以需要增加一个缓冲区。 日志数据解耦。为其他数据分析平台提供日志，可从Kafka中获取日志进行实时分析处理。 安装Kafka使用Github上的开源项目来快速搭建Kakfa环境。 克隆代码到本地使用此命令克隆elk到本地，https://github.com/wurstmeister/kafka-docker.git可以看到如下文件： 修改配置修改docker-compose-single-broker.yml文件，KAFKA_ADVERTISED_HOST_NAME为Kafka部署的IP；1vim docker-compose-single-broker.yml 修改docker-compose.yml文件，KAFKA_ADVERTISED_HOST_NAME为Kafka部署的IP；1vim docker-compose.yml 启动1docker-compose up -d 看到控制台打印以下信息，说明启动成功： 安装elk同上，github上已经有成熟的elk搭建方案，所以我们直接使用github上的开源方案来搭建elk。 克隆代码到本地使用此命令克隆elk到本地，git clone https://github.com/deviantony/docker-elk.git可以看到如下文件： 修改配置修改docker-elk/logstash/pipeline/目录下的logstash.conf，将tcp方式改为kafka：1234567891011121314151617181920212223242526272829input &#123;# tcp &#123;# port =&gt; 5000# &#125; kafka &#123; id =&gt; "ms_id001" bootstrap_servers =&gt; "YOUR-KAFKA-HOST" # 这里要修改为你的Kafka地址 topics =&gt; "test" auto_offset_reset =&gt; "latest" &#125;&#125;## Add your filters / logstash plugins configuration herefilter &#123; grok &#123; match =&gt; &#123; "message" =&gt; "%&#123;TIMESTAMP_ISO8601:logTime&#125; %&#123;GREEDYDATA:logThread&#125; %&#123;LOGLEVEL:logLevel&#125; %&#123;GREEDYDATA:logClass&#125; %&#123;GREEDYDATA:logContent&#125;" &#125; &#125;&#125;output &#123; elasticsearch &#123; hosts =&gt; "elasticsearch:9200" user =&gt; "elastic" password =&gt; "changeme" &#125;&#125; logstash自定义日志格式见上述配置文件中filter&gt;grok&gt;match下，详细的partterns可参考下面链接：https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns 启动在此目录下使用docker-compose up -d命令来启动elk，看到控制台信息，则说明启动正常。 验证访问http://localhost:5601,输入用户名:elastic,密码:changeme,看到如下页面，即代表启动成功。 SpringBoot整合ELK + Kafka引入maven包12345&lt;dependency&gt; &lt;groupId&gt;com.github.danielwegener&lt;/groupId&gt; &lt;artifactId&gt;logback-kafka-appender&lt;/artifactId&gt; &lt;version&gt;0.2.0-RC2&lt;/version&gt;&lt;/dependency&gt; 配置logback-spring.xml在SpringBoot应用resources目录下创建logback-spring文件，写入如下所示内容。需要注意的有以下两点： 配置文件下Kafka配置要根据自己的Kafka配置来修改。 pattern是和logstash下filter&gt;grok&gt;match的内容相互对应。 123456789101112131415161718192021222324&lt;?xml version="1.0" encoding="UTF-8"?&gt;&lt;!DOCTYPE configuration&gt;&lt;configuration&gt; &lt;springProperty scope="context" name="kakfaHost" source="logging.kafka.host" defaultValue="localhost"/&gt; &lt;include resource="org/springframework/boot/logging/logback/base.xml"/&gt; &lt;appender name="KAFKA" class="com.github.danielwegener.logback.kafka.KafkaAppender"&gt; &lt;encoder&gt; &lt;pattern&gt; %d&#123;yyyy-MM-dd HH:mm:ss SSS&#125; [%thread] %-5level %logger&#123;50&#125; - %msg%n &lt;/pattern&gt; &lt;/encoder&gt; &lt;topic&gt;test&lt;/topic&gt; &lt;appender-ref ref="CONSOLE"/&gt; &lt;producerConfig&gt;bootstrap.servers=YOUR-KAFKA-HOST&lt;/producerConfig&gt; &lt;keyingStrategy class="com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"/&gt; &lt;deliveryStrategy class="com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"/&gt; &lt;/appender&gt; &lt;root level="INFO"&gt; &lt;appender-ref ref="KAFKA"/&gt; &lt;appender-ref ref="CONSOLE"/&gt; &lt;/root&gt;&lt;/configuration&gt; 启动应用验证应用启动成功后，可登入Kibana控制台查看应用日志是否成功写入。可以看到应用日志已经按照我们自定义的格式写入到ES中。 至此，使用SpringCloud集成ELK + Kafka集中化日志处理已完成。示例代码可参考文首github。]]></content>
+    <title>SpringCloud日志集中化处理：ELK+Kafka</title>
+    <url>/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章演示使用SpringCloud如何整合ELK+Kafka做微服务日志集中化处理。</p></div><a id="more"></a> 
+<p>本文示例代码已上传至github：<br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<h5 id="为什么需要对微服务日志做集中化处理"><a href="#为什么需要对微服务日志做集中化处理" class="headerlink" title="为什么需要对微服务日志做集中化处理"></a>为什么需要对微服务日志做集中化处理</h5><p>在微服务架构下，各个基础服务可能使用集群方式部署在不同的机器上，这样日志查看就变得非常困难，一旦服务出现问题，在大量的日志下很难定位问题，所以就需要对微服务日志进行集中式处理，以便于我们查找、定位问题。<br>ELK是目前主流的日志收集处理方案，具有良好的性能和美观的界面，所以我们采用如下方案来对SpringCloud日志进行集中化处理：<br><img src="https://img-blog.csdnimg.cn/20191130142354674.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="SpringBoot整合ELK"></p>
+<h5 id="为什么需要kafka"><a href="#为什么需要kafka" class="headerlink" title="为什么需要kafka"></a>为什么需要kafka</h5><p>原因有两点：</p>
+<ul>
+<li>保证LogStash可用性。当业务量增大时，日志跟着增多，直接传入会使LogStash压力过大，可能挂掉，所以需要增加一个缓冲区。</li>
+<li>日志数据解耦。为其他数据分析平台提供日志，可从Kafka中获取日志进行实时分析处理。</li>
+</ul>
+<h5 id="安装Kafka"><a href="#安装Kafka" class="headerlink" title="安装Kafka"></a>安装Kafka</h5><p>使用Github上的开源项目来快速搭建Kakfa环境。</p>
+<h6 id="克隆代码到本地"><a href="#克隆代码到本地" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆elk到本地，<code>https://github.com/wurstmeister/kafka-docker.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191130161013345.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改<strong>docker-compose-single-broker.yml</strong>文件，<strong>KAFKA_ADVERTISED_HOST_NAME</strong>为Kafka部署的IP；<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose-single-broker.yml</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://img-blog.csdnimg.cn/20191130161153683.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>修改<strong>docker-compose.yml</strong>文件，<strong>KAFKA_ADVERTISED_HOST_NAME</strong>为Kafka部署的IP；<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose.yml</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://img-blog.csdnimg.cn/20191201145614322.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
+<p>看到控制台打印以下信息，说明启动成功：<br><img src="https://img-blog.csdnimg.cn/20191130170410720.png" alt="在这里插入图片描述"></p>
+<h5 id="安装elk"><a href="#安装elk" class="headerlink" title="安装elk"></a>安装elk</h5><p>同上，github上已经有成熟的elk搭建方案，所以我们直接使用github上的开源方案来搭建elk。</p>
+<h6 id="克隆代码到本地-1"><a href="#克隆代码到本地-1" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆elk到本地，<code>git clone https://github.com/deviantony/docker-elk.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191130101517691.png" alt="在这里插入图片描述"></p>
+<h6 id="修改配置-1"><a href="#修改配置-1" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改<strong>docker-elk/logstash/pipeline/</strong>目录下的<strong>logstash.conf</strong>，将tcp方式改为kafka：<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line"><span class="comment">#	tcp &#123;</span></span><br><span class="line"><span class="comment">#		port =&gt; 5000</span></span><br><span class="line"><span class="comment">#	&#125;</span></span><br><span class="line">	kafka &#123;</span><br><span class="line">		id =&gt; <span class="string">"ms_id001"</span></span><br><span class="line">		bootstrap_servers =&gt; <span class="string">"YOUR-KAFKA-HOST"</span> <span class="comment"># 这里要修改为你的Kafka地址</span></span><br><span class="line">		topics =&gt; <span class="string">"test"</span></span><br><span class="line">		auto_offset_reset =&gt; <span class="string">"latest"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">## Add your filters / logstash plugins configuration here</span></span><br><span class="line"></span><br><span class="line">filter &#123;</span><br><span class="line">    grok &#123;</span><br><span class="line">        match =&gt; &#123;</span><br><span class="line">            <span class="string">"message"</span> =&gt; <span class="string">"%&#123;TIMESTAMP_ISO8601:logTime&#125; %&#123;GREEDYDATA:logThread&#125; %&#123;LOGLEVEL:logLevel&#125; %&#123;GREEDYDATA:logClass&#125; %&#123;GREEDYDATA:logContent&#125;"</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &#123;</span><br><span class="line">	elasticsearch &#123;</span><br><span class="line">		hosts =&gt; <span class="string">"elasticsearch:9200"</span></span><br><span class="line">		user =&gt; <span class="string">"elastic"</span></span><br><span class="line">		password =&gt; <span class="string">"changeme"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>logstash自定义日志格式</strong><br>见上述配置文件中filter&gt;grok&gt;match下，详细的partterns可参考下面链接：<br><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns" target="_blank" rel="noopener">https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns</a></p>
+<h6 id="启动-1"><a href="#启动-1" class="headerlink" title="启动"></a>启动</h6><p>在此目录下使用<code>docker-compose up -d</code>命令来启动elk，看到控制台信息，则说明启动正常。<br><img src="https://img-blog.csdnimg.cn/20191130103653732.png" alt="在这里插入图片描述"></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问<a href="http://localhost:5601" target="_blank" rel="noopener">http://localhost:5601</a>,输入用户名:<strong>elastic</strong>,密码:<strong>changeme</strong>,看到如下页面，即代表启动成功。<br><img src="https://img-blog.csdnimg.cn/20191130103017377.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="SpringBoot整合ELK-Kafka"><a href="#SpringBoot整合ELK-Kafka" class="headerlink" title="SpringBoot整合ELK +  Kafka"></a>SpringBoot整合ELK +  Kafka</h5><h6 id="引入maven包"><a href="#引入maven包" class="headerlink" title="引入maven包"></a>引入maven包</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;com.github.danielwegener&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;logback-kafka-appender&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;0.2.0-RC2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="配置logback-spring-xml"><a href="#配置logback-spring-xml" class="headerlink" title="配置logback-spring.xml"></a>配置logback-spring.xml</h6><p>在SpringBoot应用resources目录下创建logback-spring文件，写入如下所示内容。<br>需要注意的有以下两点：</p>
+<ul>
+<li>配置文件下Kafka配置要根据自己的Kafka配置来修改。</li>
+<li>pattern是和logstash下filter&gt;grok&gt;match的内容相互对应。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span>?&gt;</span><br><span class="line">&lt;!DOCTYPE configuration&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;springProperty scope=<span class="string">"context"</span> name=<span class="string">"kakfaHost"</span> <span class="built_in">source</span>=<span class="string">"logging.kafka.host"</span> defaultValue=<span class="string">"localhost"</span>/&gt;</span><br><span class="line">    &lt;include resource=<span class="string">"org/springframework/boot/logging/logback/base.xml"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;appender name=<span class="string">"KAFKA"</span> class=<span class="string">"com.github.danielwegener.logback.kafka.KafkaAppender"</span>&gt;</span><br><span class="line">        &lt;encoder&gt;</span><br><span class="line">            &lt;pattern&gt;</span><br><span class="line">                %d&#123;yyyy-MM-dd HH:mm:ss SSS&#125; [%thread] %-5level %logger&#123;50&#125; - %msg%n</span><br><span class="line">            &lt;/pattern&gt;</span><br><span class="line">        &lt;/encoder&gt;</span><br><span class="line">        &lt;topic&gt;<span class="built_in">test</span>&lt;/topic&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"CONSOLE"</span>/&gt;</span><br><span class="line">        &lt;producerConfig&gt;bootstrap.servers=YOUR-KAFKA-HOST&lt;/producerConfig&gt;</span><br><span class="line">        &lt;keyingStrategy class=<span class="string">"com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"</span>/&gt;</span><br><span class="line">        &lt;deliveryStrategy class=<span class="string">"com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"</span>/&gt;</span><br><span class="line">    &lt;/appender&gt;</span><br><span class="line"></span><br><span class="line">    &lt;root level=<span class="string">"INFO"</span>&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"KAFKA"</span>/&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"CONSOLE"</span>/&gt;</span><br><span class="line">    &lt;/root&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="启动应用验证"><a href="#启动应用验证" class="headerlink" title="启动应用验证"></a>启动应用验证</h6><p>应用启动成功后，可登入Kibana控制台查看应用日志是否成功写入。可以看到应用日志已经按照我们自定义的格式写入到ES中。<br><img src="https://img-blog.csdnimg.cn/20191201152805167.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>至此，使用SpringCloud集成ELK + Kafka集中化日志处理已完成。示例代码可参考文首github。</p>
+]]></content>
       <categories>
         <category>微服务</category>
       </categories>
@@ -58,9 +265,14 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Docker运行Alibaba-Cloud-Sentinel-Dashboard]]></title>
-    <url>%2F2019%2F11%2F01%2FDocker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;基于Docker快速搭建Alibaba Cloud Sentinel Dashboard。 下载docker image1docker search sentinel 1docker pull bladex/sentinel-dashboard 后台运行Sentinel Dashboard1docker run --name sentinel-dashboard -p 9001:8858 -d bladex/sentinel-dashboard:latest 访问localhost:9001用户名/密码:sentinel sentinel]]></content>
+    <title>Docker运行Alibaba-Cloud-Sentinel-Dashboard</title>
+    <url>/2019/11/01/Docker%E8%BF%90%E8%A1%8CAlibaba-Cloud-Sentinel-Dashboard/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;基于Docker快速搭建Alibaba Cloud Sentinel Dashboard。</p></div><a id="more"></a> 
+<h3 id="下载docker-image"><a href="#下载docker-image" class="headerlink" title="下载docker image"></a>下载docker image</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker search sentinel</span><br></pre></td></tr></table></figure>
+<p><img src="https://img-blog.csdnimg.cn/20191116164522908.png" alt="在这里插入图片描述"><br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker pull bladex/sentinel-dashboard</span><br></pre></td></tr></table></figure></p>
+<h3 id="后台运行Sentinel-Dashboard"><a href="#后台运行Sentinel-Dashboard" class="headerlink" title="后台运行Sentinel Dashboard"></a>后台运行Sentinel Dashboard</h3><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker run --name sentinel-dashboard -p 9001:8858 -d bladex/sentinel-dashboard:latest</span><br></pre></td></tr></table></figure>
+<h3 id="访问"><a href="#访问" class="headerlink" title="访问"></a>访问</h3><p>localhost:9001<br>用户名/密码:sentinel sentinel<br><img src="https://img-blog.csdnimg.cn/20191116171446778.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+]]></content>
       <categories>
         <category>微服务</category>
       </categories>
@@ -69,9 +281,19 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Thread的start、run方法]]></title>
-    <url>%2F2019%2F10%2F23%2FThread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;对比一下Java Thread的start()和run()。 start()使用start()才是真正意义上的启动一个新线程，调用start()之后，线程并不会立即进入到运行状态，而是会做一系列的准备工作，而是让自己处于就绪状态，此时会等待获取cpu资源，一旦获取到cpu资源，才会执行重写的run()，执行完后则会销毁线程。以下为线程调用start()的代码: 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; new Thread(runnable).start();&#125; 执行结果如下，可以看到start()启动了一个子线程。我们可以分析一下start()的源码，可以看出，当线程状态不为0时，会抛出IllegalThreadStateException，这就是为什么start方法不能执行两次的原因，最终，start方法会调用本地方法start0，以下为jdk8中start()的源码。 1234567891011121314151617181920public synchronized void start() &#123; // 0为初始化状态 if (threadStatus != 0) throw new IllegalThreadStateException(); group.add(this); boolean started = false; try &#123; start0(); started = true; &#125; finally &#123; try &#123; if (!started) &#123; group.threadStartFailed(this); &#125; &#125; catch (Throwable ignore) &#123; &#125; &#125;&#125;// 本地方法start0private native void start0(); run()run()和普通的方法没有什么区别，以下为run()执行的代码： 123456public static void main(String[] args) &#123; Runnable runnable = () -&gt; &#123; System.out.println(Thread.currentThread().getName() + "被调用..."); &#125;; runnable.run();&#125; 执行结果如下：从执行结果可以看出，run方法并不是启动了一个子线程，而是直接执行了主线程。以下为JDK中run()方法执行的源码： 12345public void run() &#123; if (target != null) &#123; target.run(); &#125;&#125; 总结start()才能真正意义上的启动一个线程，才能去经历一个线程的生命周期。而run()只是一个普通的方法，并不会使用子线程去调用。start()不能执行两次，执行过一次之后，再执行就会抛出异常。]]></content>
+    <title>Thread的start、run方法</title>
+    <url>/2019/10/23/Thread%E7%9A%84start%E3%80%81run%E6%96%B9%E6%B3%95/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;对比一下Java Thread的start()和run()。</p></div><a id="more"></a> 
+<h3 id="start"><a href="#start" class="headerlink" title="start()"></a>start()</h3><p>使用start()才是真正意义上的启动一个新线程，调用start()之后，线程并不会立即进入到运行状态，而是会做一系列的准备工作，而是让自己处于就绪状态，此时会等待获取cpu资源，一旦获取到cpu资源，才会执行重写的run()，执行完后则会销毁线程。以下为线程调用start()的代码:</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    Runnable runnable = () -&gt; &#123;</span><br><span class="line">        System.out.println(Thread.currentThread().getName() + <span class="string">"被调用..."</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    <span class="keyword">new</span> Thread(runnable).start();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果如下，可以看到start()启动了一个子线程。<br><img src="https://img-blog.csdnimg.cn/20191112231305157.png" alt="在这里插入图片描述"><br>我们可以分析一下start()的源码，可以看出，当线程状态不为0时，会抛出<strong>IllegalThreadStateException</strong>，这就是为什么start方法不能执行两次的原因，最终，start方法会调用本地方法<strong>start0</strong>，以下为jdk8中start()的源码。</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">synchronized</span> <span class="keyword">void</span> <span class="title">start</span><span class="params">()</span> </span>&#123;</span><br><span class="line">	<span class="comment">// 0为初始化状态</span></span><br><span class="line">    <span class="keyword">if</span> (threadStatus != <span class="number">0</span>)</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> IllegalThreadStateException();</span><br><span class="line">    group.add(<span class="keyword">this</span>);</span><br><span class="line">    <span class="keyword">boolean</span> started = <span class="keyword">false</span>;</span><br><span class="line">    <span class="keyword">try</span> &#123;</span><br><span class="line">        start0();</span><br><span class="line">        started = <span class="keyword">true</span>;</span><br><span class="line">    &#125; <span class="keyword">finally</span> &#123;</span><br><span class="line">        <span class="keyword">try</span> &#123;</span><br><span class="line">            <span class="keyword">if</span> (!started) &#123;</span><br><span class="line">                group.threadStartFailed(<span class="keyword">this</span>);</span><br><span class="line">            &#125;</span><br><span class="line">        &#125; <span class="keyword">catch</span> (Throwable ignore) &#123;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"><span class="comment">// 本地方法start0</span></span><br><span class="line"><span class="function"><span class="keyword">private</span> <span class="keyword">native</span> <span class="keyword">void</span> <span class="title">start0</span><span class="params">()</span></span>;</span><br></pre></td></tr></table></figure>
+<h3 id="run"><a href="#run" class="headerlink" title="run()"></a>run()</h3><p>run()和普通的方法没有什么区别，以下为run()执行的代码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">static</span> <span class="keyword">void</span> <span class="title">main</span><span class="params">(String[] args)</span> </span>&#123;</span><br><span class="line">    Runnable runnable = () -&gt; &#123;</span><br><span class="line">        System.out.println(Thread.currentThread().getName() + <span class="string">"被调用..."</span>);</span><br><span class="line">    &#125;;</span><br><span class="line">    runnable.run();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>执行结果如下：<br><img src="https://img-blog.csdnimg.cn/20191112234020901.png" alt="在这里插入图片描述"><br>从执行结果可以看出，run方法并不是启动了一个子线程，而是直接执行了主线程。以下为JDK中run()方法执行的源码：</p>
+<figure class="highlight java"><table><tr><td class="code"><pre><span class="line"><span class="function"><span class="keyword">public</span> <span class="keyword">void</span> <span class="title">run</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  	<span class="keyword">if</span> (target != <span class="keyword">null</span>) &#123;</span><br><span class="line">        target.run();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h3><p>start()才能真正意义上的启动一个线程，才能去经历一个线程的生命周期。而run()只是一个普通的方法，并不会使用子线程去调用。start()不能执行两次，执行过一次之后，再执行就会抛出异常。</p>
+]]></content>
       <categories>
         <category>并发</category>
       </categories>
@@ -80,33 +302,311 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[分布式理论之BASE]]></title>
-    <url>%2F2019%2F10%2F04%2F%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA%E4%B9%8BBASE%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;BASE理论是对CAP理论的延伸，是对 CAP 中 AP 方案的一个补充，提出通过牺牲强一致性获得高可用性，是由eBay的架构师Dan Pritchett在ACM上提出。 核心思想是： 即使无法做到强一致性（Strong Consistency，CAP 的一致性就是强一致性），但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性（Eventual consistency）。 什么是BASE理论？BASE是基本可用（Basically Available）、软状态（Soft State）、最终一致性（Eventual Consistency）三个短语的缩写。 基本可用基本可用（Basically Available）指的是分布式系统在故障时，允许损失部分可用性，即保证核心可用。 可损失部分性能，比如登录请求响应时间变长200ms。 可损失部分功能，比如注册功能暂时不可用。 软状态软状态（Soft State）是指允许系统存在中间状态，而该中间状态不会影响系统整体可用性，中间状态也是CAP理论中的数据不一致的体现，分布式存储中允许不同节点间副本同步的延时也是软状态的体现。 最终一致性最终一致性（Eventual Consistency）是指系统中的所有数据副本经过一定时间后，最终能够达到一致的状态。关键词是“一定时间”和“最终”。一定时间：不同系统能够容忍的数据不一致时间是不同的。最终：不管多长时间，最终还是要达到一致性的状态。 BASE和ACID的区别ACID 是数据库事务完整性的理论，强调强一致性。BASE 理论面向的是高可用可扩展的分布式系统，和 ACID 是相反的，它是通过牺牲强一致性来获得可用性，并允许数据在一段时间是不一致的。]]></content>
+    <title>分布式理论之BASE</title>
+    <url>/2019/10/04/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA%E4%B9%8BBASE/</url>
+    <content><![CDATA[<div class="note danger"><p>&emsp;&emsp;BASE理论是对CAP理论的延伸，是对 CAP 中 AP 方案的一个补充，提出通过牺牲强一致性获得高可用性，是由eBay的架构师Dan Pritchett在ACM上提出。</p></div><a id="more"></a>
+<p>核心思想是：</p>
+<blockquote>
+<p>即使无法做到强一致性（Strong Consistency，CAP 的一致性就是强一致性），但每个应用都可以根据自身的业务特点，采用适当的方式来使系统达到最终一致性（Eventual consistency）。</p>
+</blockquote>
+<h6 id="什么是BASE理论？"><a href="#什么是BASE理论？" class="headerlink" title="什么是BASE理论？"></a>什么是BASE理论？</h6><p>BASE是基本可用（Basically Available）、软状态（Soft State）、最终一致性（Eventual Consistency）三个短语的缩写。</p>
+<h6 id="基本可用"><a href="#基本可用" class="headerlink" title="基本可用"></a>基本可用</h6><p>基本可用（Basically Available）指的是分布式系统在故障时，允许损失<strong>部分</strong>可用性，即保证<strong>核心</strong>可用。</p>
+<ul>
+<li>可损失部分性能，比如登录请求响应时间变长200ms。</li>
+<li>可损失部分功能，比如注册功能暂时不可用。</li>
+</ul>
+<h6 id="软状态"><a href="#软状态" class="headerlink" title="软状态"></a>软状态</h6><p>软状态（Soft State）是指允许系统存在<strong>中间状态</strong>，而该中间状态不会影响系统整体可用性，中间状态也是CAP理论中的数据不一致的体现，分布式存储中允许不同节点间副本同步的延时也是软状态的体现。</p>
+<h6 id="最终一致性"><a href="#最终一致性" class="headerlink" title="最终一致性"></a>最终一致性</h6><p>最终一致性（Eventual Consistency）是指系统中的所有数据副本经过<strong>一定时间</strong>后，<strong>最终</strong>能够达到一致的状态。关键词是“一定时间”和“最终”。<br>一定时间：不同系统能够容忍的数据不一致时间是不同的。<br>最终：不管多长时间，最终还是要达到一致性的状态。</p>
+<h6 id="BASE和ACID的区别"><a href="#BASE和ACID的区别" class="headerlink" title="BASE和ACID的区别"></a>BASE和ACID的区别</h6><p>ACID 是数据库事务完整性的理论，强调强一致性。<br>BASE 理论面向的是高可用可扩展的分布式系统，和 ACID 是相反的，它是通过牺牲强一致性来获得可用性，并允许数据在一段时间是不一致的。</p>
+]]></content>
       <categories>
         <category>分布式</category>
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[分布式理论之CAP]]></title>
-    <url>%2F2019%2F10%2F04%2F%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA%E4%B9%8BCAP%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;CAP定理是计算机科学家Eric Brewer在2000年提出的一个猜想。在2002年时，CAP被麻省理工学院的Seth Gilbert和Nancy Lynch所证明，成为了分布式计算领域的公认的一个定理。 CAP理论是什么？对于一个分布式计算系统（指相互连接并共享数据的节点的集合），当涉及到读写操作时，不可能同时满足Consistency（一致性）、Availability（可用性）、Partition tolerance（分区容忍性）三个设计约束，只能保证它们之间的两个共存。 一致性： 对于某个指定的客户端，读操作保证能够返回最新的写操作结果。 可用性： 非故障的节点在合理的时间内返回合理的响应。 分区容忍性： 当出现网络分区后，系统能够继续正常执行。 什么是网络分区？在分布式系统中，不同的节点分布在不同的子网络中，由于一些特殊的原因，这些子节点之间出现了网络不通的状态，但他们的内部子网络是正常的。从而导致了整个系统的环境被切分成了若干个孤立的区域。 CAP应用CAP理论定义是三要素只能取两个，那组合起来就是：CA、CP、AP。但是在分布式环境下，分区容忍性是必须要选择的，因为网络不可能保证100%可靠，所以肯定会出现分区的现象。因此，分布式系统理论上不能选择CA架构，只能选择CP或者AP架构。 CP架构如下图，当发生网络故障时，Node1和Node2之间不能正常通信，为了保证Node1和Node2数据的一致性，Node1会拒绝Client1新数据的写入，导致写入失败。当Client2向Node2发起读数据请求时，Node2会返回网络故障之前保存的数据，是整个系统最后一次成功写入的数据。这样就保证了数据的一致性（C）和分区容忍性（P），但是放弃了可用性（A）。 AP架构如下图，当发生网络故障时，Node1和Node2之间不能正常通信，当Client1发起写入新数据请求，Node1允许写入，写入新数据成功，但此时Node1和Node2不能通信，所以Node2的数据还是旧数据。当Client2发起读数据请求时，Node2的数据与Node1的数据不一致，但是却正常的响应请求，返回了合理的数据。所以保证了可用性（A）。但是却放弃了数据一致性（C）。 CAP最佳实践？ CAP 关注的粒度是数据，而不是整个系统。因为每个系统不可能只处理一种类型的数据，比如一些订单数据，是需要强一致性的，就必须保证CP；而一些商品数据，就不一定需要保证CP，保证AP就足够了。如果整个系统不考虑数据去保证CP或者AP，无论怎么设计都会有问题。 CAP忽略了网络延迟。 正常运行情况下，不存在 CP 和 AP 的选择，可以同时满足CA。如果系统没有发生分区，P也不会存在。在架构设计时，既要考虑分区发生时选择 CP 还是 AP，也要考虑分区没有发生时如何保证 CA。 放弃并不等于什么都不做，需要为分区恢复后做准备。 参考资料 https://time.geekbang.org/column/article/9390]]></content>
+    <title>分布式理论之CAP</title>
+    <url>/2019/10/04/%E5%88%86%E5%B8%83%E5%BC%8F%E7%90%86%E8%AE%BA%E4%B9%8BCAP/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;CAP定理是计算机科学家Eric Brewer在2000年提出的一个猜想。在2002年时，CAP被麻省理工学院的Seth Gilbert和Nancy Lynch所证明，成为了分布式计算领域的公认的一个定理。</p></div><a id="more"></a> 
+<h5 id="CAP理论是什么？"><a href="#CAP理论是什么？" class="headerlink" title="CAP理论是什么？"></a>CAP理论是什么？</h5><p>对于一个分布式计算系统（指相互连接并共享数据的节点的集合），当涉及到读写操作时，不可能同时满足Consistency（一致性）、Availability（可用性）、Partition tolerance（分区容忍性）三个设计约束，只能保证它们之间的两个共存。</p>
+<ul>
+<li><p><strong>一致性：</strong></p>
+<blockquote>
+<p>对于某个指定的客户端，读操作保证能够返回最新的写操作结果。</p>
+</blockquote>
+</li>
+<li><p><strong>可用性：</strong></p>
+<blockquote>
+<p>非故障的节点在合理的时间内返回合理的响应。</p>
+</blockquote>
+</li>
+<li><p><strong>分区容忍性：</strong></p>
+<blockquote>
+<p>当出现网络分区后，系统能够继续正常执行。</p>
+</blockquote>
+</li>
+</ul>
+<h5 id="什么是网络分区？"><a href="#什么是网络分区？" class="headerlink" title="什么是网络分区？"></a>什么是网络分区？</h5><p>在分布式系统中，不同的节点分布在不同的子网络中，由于一些特殊的原因，这些子节点之间出现了网络不通的状态，但他们的内部子网络是正常的。从而导致了整个系统的环境被切分成了若干个孤立的区域。</p>
+<h5 id="CAP应用"><a href="#CAP应用" class="headerlink" title="CAP应用"></a>CAP应用</h5><p>CAP理论定义是三要素只能取两个，那组合起来就是：CA、CP、AP。但是在分布式环境下，分区容忍性是必须要选择的，因为网络不可能保证100%可靠，所以肯定会出现分区的现象。因此，分布式系统理论上不能选择CA架构，只能选择CP或者AP架构。</p>
+<h6 id="CP架构"><a href="#CP架构" class="headerlink" title="CP架构"></a>CP架构</h6><p>如下图，当发生网络故障时，Node1和Node2之间不能正常通信，为了保证Node1和Node2数据的一致性，Node1会拒绝Client1新数据的写入，导致写入失败。<br>当Client2向Node2发起读数据请求时，Node2会返回网络故障之前保存的数据，是整个系统最后一次成功写入的数据。这样就保证了数据的一致性（C）和分区容忍性（P），但是放弃了可用性（A）。<br><img src="https://img-blog.csdnimg.cn/20191004165507148.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="CP架构"></p>
+<h6 id="AP架构"><a href="#AP架构" class="headerlink" title="AP架构"></a>AP架构</h6><p>如下图，当发生网络故障时，Node1和Node2之间不能正常通信，当Client1发起写入新数据请求，Node1允许写入，写入新数据成功，但此时Node1和Node2不能通信，所以Node2的数据还是旧数据。<br>当Client2发起读数据请求时，Node2的数据与Node1的数据不一致，但是却正常的响应请求，返回了合理的数据。所以保证了可用性（A）。但是却放弃了数据一致性（C）。<br><img src="https://img-blog.csdnimg.cn/20191004171254475.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="CAP最佳实践？"><a href="#CAP最佳实践？" class="headerlink" title="CAP最佳实践？"></a>CAP最佳实践？</h5><ol>
+<li>CAP 关注的粒度是数据，而不是整个系统。因为每个系统不可能只处理一种类型的数据，比如一些订单数据，是需要强一致性的，就必须保证CP；而一些商品数据，就不一定需要保证CP，保证AP就足够了。如果整个系统不考虑数据去保证CP或者AP，无论怎么设计都会有问题。</li>
+<li>CAP忽略了网络延迟。</li>
+<li>正常运行情况下，不存在 CP 和 AP 的选择，可以同时满足CA。如果系统没有发生分区，P也不会存在。在架构设计时，既要考虑分区发生时选择 CP 还是 AP，也要考虑分区没有发生时如何保证 CA。<ol start="4">
+<li>放弃并不等于什么都不做，需要为分区恢复后做准备。</li>
+</ol>
+</li>
+</ol>
+<p>参考资料</p>
+<blockquote>
+<pre><code>https://time.geekbang.org/column/article/9390
+</code></pre></blockquote>
+]]></content>
       <categories>
         <category>分布式</category>
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[lambda用法示例]]></title>
-    <url>%2F2019%2F10%2F04%2Flambda%E7%94%A8%E6%B3%95%E7%A4%BA%E4%BE%8B%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;整理一下常用的lambda语法和示例。 示例实体：123456789101112131415161718192021@Data@Accessors(chain = true)@AllArgsConstructorpublic static class User &#123; private Integer id; private String name; private String sex; private Integer age;&#125;public static List&lt;User&gt; users;static &#123; users = new ArrayList&lt;&gt;(); users.add(new User(1, &quot;libai&quot;, &quot;M&quot;,23)); users.add(new User(2, &quot;zhaoyun&quot;, &quot;M&quot;,18)); users.add(new User(3, &quot;hanxin&quot;, &quot;F&quot;,19)); users.add(new User(4, &quot;kai&quot;, &quot;F&quot;,21)); users.add(new User(5, &quot;yao&quot;, &quot;F&quot;,26));&#125;public static void main(String[] args) &#123;&#125; forEach示例：遍历集合。123users.stream().forEach( item -&gt; System.out.println(item.getId())); filter从集合筛选出符合条件的记录。 示例一：返回符合条件的第一条记录。123Optional&lt;User&gt; optional = users.stream().filter( item -&gt; item.getId().equals(&quot;1&quot;)).findFirst(); 示例二：返回符合条件所有记录。123List&lt;User&gt; collect= users.stream().filter( item -&gt; item.getId().equals(&quot;1&quot;)).collect(Collectors.toList()); Groupingby示例：根据某个字段相同的实体分成一组。123Map&lt;String, List&lt;User&gt;&gt; collect = users.stream().collect( Collectors.groupingBy(c -&gt; c.getSex())); Comparator示例：按照User的年龄升序给list排序。1users.sort((User o1, User o2) -&gt; o1.getAge().compareTo(o2.getAge())); listToMap示例一：list转换成map，map的key为user的Id，value为user实体。123Map&lt;Integer, User&gt; userMap= users.stream().collect( Collectors.toMap((key -&gt; key.getId()), (value -&gt; value))); 示例二：list转换成map，map的key为user的Id，value为user某个字段。 123Map&lt;Integer, String&gt; propMap = users.stream().collect( Collectors.toMap(User::getId, User::getName)); map-reduce示例：计算list中User的年龄总和。1Optional&lt;Integer&gt; reduce = users.stream().map(User::getAge).reduce((i, j) -&gt; i + j); flatmap示例：给定String数组，去重输出。1234567String[] words = new String[]&#123;&quot;Hello&quot;,&quot;World&quot;&#125;;List&lt;String&gt; a = Arrays.stream(words) .map(word -&gt; word.split(&quot;&quot;)) .flatMap(Arrays::stream) .distinct() .collect(toList());a.forEach(System.out::print);]]></content>
+    <title>lambda用法示例</title>
+    <url>/2019/10/04/lambda%E7%94%A8%E6%B3%95%E7%A4%BA%E4%BE%8B/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;整理一下常用的lambda语法和示例。</p></div><a id="more"></a> 
+<p>示例实体：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">@Data</span><br><span class="line">@Accessors(chain = true)</span><br><span class="line">@AllArgsConstructor</span><br><span class="line">public static class User &#123;</span><br><span class="line">    private Integer id;</span><br><span class="line">    private String name;</span><br><span class="line">    private String sex;</span><br><span class="line">    private Integer age;</span><br><span class="line">&#125;</span><br><span class="line">public static List&lt;User&gt; users;</span><br><span class="line">static &#123;</span><br><span class="line">    users = new ArrayList&lt;&gt;();</span><br><span class="line">    users.add(new User(1, &quot;libai&quot;, &quot;M&quot;,23));</span><br><span class="line">    users.add(new User(2, &quot;zhaoyun&quot;, &quot;M&quot;,18));</span><br><span class="line">    users.add(new User(3, &quot;hanxin&quot;, &quot;F&quot;,19));</span><br><span class="line">    users.add(new User(4, &quot;kai&quot;, &quot;F&quot;,21));</span><br><span class="line">    users.add(new User(5, &quot;yao&quot;, &quot;F&quot;,26));</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<h5 id="forEach"><a href="#forEach" class="headerlink" title="forEach"></a>forEach</h5><p>示例：遍历集合。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">users.stream().forEach(</span><br><span class="line">	item -&gt; System.out.println(item.getId())</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<h5 id="filter"><a href="#filter" class="headerlink" title="filter"></a>filter</h5><p>从集合筛选出符合条件的记录。</p>
+<p>示例一：返回符合条件的第一条记录。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Optional&lt;User&gt; optional = users.stream().filter(</span><br><span class="line">	item -&gt;	item.getId().equals(&quot;1&quot;)</span><br><span class="line">).findFirst();</span><br></pre></td></tr></table></figure></p>
+<p>示例二：返回符合条件所有记录。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">List&lt;User&gt; collect= users.stream().filter(</span><br><span class="line">	item -&gt; item.getId().equals(&quot;1&quot;)</span><br><span class="line">).collect(Collectors.toList());</span><br></pre></td></tr></table></figure></p>
+<h5 id="Groupingby"><a href="#Groupingby" class="headerlink" title="Groupingby"></a>Groupingby</h5><p>示例：根据某个字段相同的实体分成一组。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Map&lt;String, List&lt;User&gt;&gt; collect = users.stream().collect(</span><br><span class="line">    Collectors.groupingBy(c -&gt; c.getSex())</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<h5 id="Comparator"><a href="#Comparator" class="headerlink" title="Comparator"></a>Comparator</h5><p>示例：按照User的年龄升序给list排序。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">users.sort((User o1, User o2) -&gt; o1.getAge().compareTo(o2.getAge()));</span><br></pre></td></tr></table></figure></p>
+<h5 id="listToMap"><a href="#listToMap" class="headerlink" title="listToMap"></a>listToMap</h5><p>示例一：list转换成map，map的key为user的Id，value为user实体。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Map&lt;Integer, User&gt; userMap= users.stream().collect(</span><br><span class="line">        Collectors.toMap((key -&gt; key.getId()), (value -&gt; value))</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<p>示例二：list转换成map，map的key为user的Id，value为user某个字段。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Map&lt;Integer, String&gt; propMap = users.stream().collect(</span><br><span class="line">       Collectors.toMap(User::getId, User::getName)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
+<h5 id="map-reduce"><a href="#map-reduce" class="headerlink" title="map-reduce"></a>map-reduce</h5><p>示例：计算list中User的年龄总和。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">Optional&lt;Integer&gt; reduce = users.stream().map(User::getAge).reduce((i, j) -&gt; i + j);</span><br></pre></td></tr></table></figure></p>
+<h5 id="flatmap"><a href="#flatmap" class="headerlink" title="flatmap"></a>flatmap</h5><p>示例：给定String数组，去重输出。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">String[] words = new String[]&#123;&quot;Hello&quot;,&quot;World&quot;&#125;;</span><br><span class="line">List&lt;String&gt; a = Arrays.stream(words)</span><br><span class="line">        .map(word -&gt; word.split(&quot;&quot;))</span><br><span class="line">        .flatMap(Arrays::stream)</span><br><span class="line">        .distinct()</span><br><span class="line">        .collect(toList());</span><br><span class="line">a.forEach(System.out::print);</span><br></pre></td></tr></table></figure></p>
+]]></content>
       <categories>
         <category>Java</category>
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[JVM性能监控和管理工具]]></title>
-    <url>%2F2019%2F09%2F23%2FJVM%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E5%92%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;JVM提供了丰富的性能监控和故障处理的工具，在生产环境中，我们可以使用这些工具进行JVM性能调优和故障处理。 命令行工具常用的包括：jps、jstat、jstatd、jinfo、jmap、jstack。 jpsJVM进程状态工具，可以列出系统上已启动的java应用进程状态。类似于linux系统的ps指令。输出到控制台的格式为： 1lvmid [ [ classname | JARfilename | &quot;Unknown&quot;] [ arg* ] [ jvmarg* ] ] 命令用法：jps [ options ] [ hostid ] options 参数 作用 -q 输出类名称，JAR文件名和传递给main方法的参数的输出 -m 输出传递给main方法的参数 -l 输出完整软件包名称或完整路径名称 -v 输出通过标志文件（.hotspotrc文件或-XX：Flags = 参数指定的文件）传递给JVM的参数 -V 输出传递给main方法的参数 –Joption 将选项传递给javac调用的Java启动器 hostid：目标系统的字符串，如果不写，则默认目标为本机JVM。格式如下： 1[protocol:][[//]hostname][:port][/servername] jstatJVM统计监视工具，能够收集并记录命令行选项指定的性能统计信息。 命令用法：jstat [ generalOption | outputOptions vmid [interval[s|ms] [count]] ] 参数： generalOption：-help, -options, -version。 vmid：虚拟机标识符，格式为[protocol:][//]lvmid[@hostname][:port][/servername] protocol interval[s|ms]：输出间隔，默认单位为毫秒。如果指定，jstat将在每个间隔生成其输出。 count：要显示的样本数，默认为无穷大，显示统计信息，直到目标jvm终止或jstat命令终止。 outputOptions ： 参数 作用 -statOption jstat显示的统计信息 -h n 每n个样本（输出行）显示一个列标题，在第一行数据上方显示列标题 -t n 将时间戳列显示为输出的第一列。时间戳是自目标jvm的开始时间起的时间 -JjavaOption 将选项传递给javac调用的Java启动器 -statOption可以参考：statOption参数详情。 jstatdjstatd可以启动一个JVM JSTAT的守护进程，监视JVM的 创建和终止，并提供一个接口，允许远程监控工具附加到本地系统上运行的JVM上。 命令用法：jstatd [ options ] options ： 参数 作用 -nr 当找不到现有的rmi注册表时，不会在jstatd进程中创建内部rmi注册表 -p port 需要找到RMI注册表的端口号，如果找不到，则在未指定-nr的情况下创建 -n rminame 远程rmi对象在rmi注册表中绑定到的名称 -Joption 将选项传递给javac调用的Java启动器 jinfo为给定的Java进程或核心文件或远程调试服务器打印Java配置信息。配置信息包括Java系统属性和Java虚拟机命令行标志。 命令用法： 123jinfo [ option ] pidjinfo [ option ] executable corejinfo [ option ] [server-id@]remote-hostname-or-IP 这些选项参数是互斥的，选项紧跟在命令名之后。 参数 pid：要为其打印配置信息的进程ID，jps命令输出的id。 executable：能够产生堆内存的Java可执行文件。 core：要为其打印配置信息的核心文件。 remote-hostname-or-IP：远程调试服务器的主机名或IP地址。 server-id：如果多个调试服务器在同一远程主机上运行，则为可选的唯一ID。 option： 参数 作用 no option key-value形式打印命令行标志以及系统属性 -flags key-value形式打印命令行标志 -sysprops key-value形式打印系统属性 -h或-help 打印帮助信息 jmap打印共享对象内存映射或给定进程或核心文件或远程调试服务器的堆内存细节，与jinfo使用相似。 命令用法： 123jmap [ option ] pidjmap [ option ] executable corejmap [ option ] [server-id@]remote-hostname-or-IP 这些选项参数是互斥的，选项紧跟在命令名之后。 参数与jinfo一致。 option： 参数 作用 no option 打印共享对象映射。对于加载到目标vm中的每个共享对象，将打印开始地址、映射大小和共享对象文件的完整路径 -heap 打印堆摘要，打印使用的GC算法、堆配置和按生成的堆使用情况 -histo 打印堆的直方图。对于每个Java类，都会打印对象数、内存大小（字节）和完全限定的类名。vm内部类名以“*”前缀打印。 -permstat 打印类加载程序的Java堆永久生成的统计数据。对于每个类加载器，都会打印其名称、活动性、地址、父类加载器以及已加载的类的数量和大小 -h或-help 打印帮助信息 jstack为给定的Java进程或核心文件或远程调试服务器打印Java线程的Java堆栈跟踪。对于每个Java框架，打印完整的类名、方法名称、“BCI”（字节代码索引）和行号（如果可用的话）。 命令用法： 123jmap [ option ] pidjmap [ option ] executable corejmap [ option ] [server-id@]remote-hostname-or-IP 参数与jinfo一致。 option： 参数 作用 -m 打印混合模式（Java和本地C/C++框架）堆栈跟踪 图形界面工具常用的包括：jconsole、jvisualvm。 jconsole启动程序为jdk安装目录bin下的jconsole.exe，打开后选择要监控的进程即可展示出如下窗口： jvisualvm启动程序为jdk安装目录bin下的jvisualvm.exe，打开后选择要监控的进程即可展示出如下窗口：本文参考： https://docs.oracle.com/javase/1.5.0/docs/tooldocs/#manage]]></content>
+    <title>JVM性能监控和管理工具</title>
+    <url>/2019/09/23/JVM%E6%80%A7%E8%83%BD%E7%9B%91%E6%8E%A7%E5%92%8C%E7%AE%A1%E7%90%86%E5%B7%A5%E5%85%B7/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;JVM提供了丰富的性能监控和故障处理的工具，在生产环境中，我们可以使用这些工具进行JVM性能调优和故障处理。</p></div><a id="more"></a>
+<h4 id="命令行工具"><a href="#命令行工具" class="headerlink" title="命令行工具"></a>命令行工具</h4><p>常用的包括：jps、jstat、jstatd、jinfo、jmap、jstack。</p>
+<h5 id="jps"><a href="#jps" class="headerlink" title="jps"></a>jps</h5><p>JVM进程状态工具，可以列出系统上已启动的java应用进程状态。类似于linux系统的ps指令。输出到控制台的格式为：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">lvmid [ [ classname | JARfilename | &quot;Unknown&quot;] [ arg* ] [ jvmarg* ] ]</span><br></pre></td></tr></table></figure>
+<ul>
+<li>命令用法：<code>jps [ options ] [ hostid ]</code></li>
+<li>options</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-q</td>
+<td>输出类名称，JAR文件名和传递给main方法的参数的输出</td>
+</tr>
+<tr>
+<td>-m</td>
+<td>输出传递给main方法的参数</td>
+</tr>
+<tr>
+<td>-l</td>
+<td>输出完整软件包名称或完整路径名称</td>
+</tr>
+<tr>
+<td>-v</td>
+<td>输出通过标志文件（.hotspotrc文件或-XX：Flags = <filename>参数指定的文件）传递给JVM的参数</filename></td>
+</tr>
+<tr>
+<td>-V</td>
+<td>输出传递给main方法的参数</td>
+</tr>
+<tr>
+<td>–Joption</td>
+<td>将选项传递给javac调用的Java启动器</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>hostid：目标系统的字符串，如果不写，则默认目标为本机JVM。格式如下：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">[protocol:][[//]hostname][:port][/servername]</span><br></pre></td></tr></table></figure>
+<h5 id="jstat"><a href="#jstat" class="headerlink" title="jstat"></a>jstat</h5><p>JVM统计监视工具，能够收集并记录命令行选项指定的性能统计信息。</p>
+<ul>
+<li>命令用法：<code>jstat [ generalOption | outputOptions vmid [interval[s|ms] [count]] ]</code></li>
+<li>参数：<br>  generalOption：-help, -options, -version。<br>  vmid：虚拟机标识符，格式为<code>[protocol:][//]lvmid[@hostname][:port][/servername]
+protocol</code><br>  interval[s|ms]：输出间隔，默认单位为毫秒。如果指定，jstat将在每个间隔生成其输出。<br>  count：要显示的样本数，默认为无穷大，显示统计信息，直到目标jvm终止或jstat命令终止。</li>
+<li>outputOptions ：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-statOption</td>
+<td>jstat显示的统计信息</td>
+</tr>
+<tr>
+<td>-h n</td>
+<td>每n个样本（输出行）显示一个列标题，在第一行数据上方显示列标题</td>
+</tr>
+<tr>
+<td>-t n</td>
+<td>将时间戳列显示为输出的第一列。时间戳是自目标jvm的开始时间起的时间</td>
+</tr>
+<tr>
+<td>-JjavaOption</td>
+<td>将选项传递给javac调用的Java启动器</td>
+</tr>
+</tbody>
+</table>
+<p>-statOption可以参考：<a href="https://docs.oracle.com/javase/1.5.0/docs/tooldocs/share/jstat.html" target="_blank" rel="noopener">statOption参数详情</a>。</p>
+<h5 id="jstatd"><a href="#jstatd" class="headerlink" title="jstatd"></a>jstatd</h5><p>jstatd可以启动一个JVM JSTAT的守护进程，监视JVM的 创建和终止，并提供一个接口，允许远程监控工具附加到本地系统上运行的JVM上。</p>
+<ul>
+<li>命令用法：<code>jstatd [ options ]</code></li>
+<li>options ：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-nr</td>
+<td>当找不到现有的rmi注册表时，不会在jstatd进程中创建内部rmi注册表</td>
+</tr>
+<tr>
+<td>-p  port</td>
+<td>需要找到RMI注册表的端口号，如果找不到，则在未指定-nr的情况下创建</td>
+</tr>
+<tr>
+<td>-n  rminame</td>
+<td>远程rmi对象在rmi注册表中绑定到的名称</td>
+</tr>
+<tr>
+<td>-Joption</td>
+<td>将选项传递给javac调用的Java启动器</td>
+</tr>
+</tbody>
+</table>
+<h5 id="jinfo"><a href="#jinfo" class="headerlink" title="jinfo"></a>jinfo</h5><p>为给定的Java进程或核心文件或远程调试服务器打印Java配置信息。配置信息包括Java系统属性和Java虚拟机命令行标志。</p>
+<ul>
+<li>命令用法：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">jinfo [ option ] pid</span><br><span class="line">jinfo [ option ] executable core</span><br><span class="line">jinfo [ option ] [server-id@]remote-hostname-or-IP</span><br></pre></td></tr></table></figure>
+<p>这些选项参数是互斥的，选项紧跟在命令名之后。</p>
+<ul>
+<li>参数<br>  pid：要为其打印配置信息的进程ID，jps命令输出的id。<br>  executable：能够产生堆内存的Java可执行文件。<br>  core：要为其打印配置信息的核心文件。<br>  remote-hostname-or-IP：远程调试服务器的主机名或IP地址。<br>  server-id：如果多个调试服务器在同一远程主机上运行，则为可选的唯一ID。</li>
+<li>option：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no option</td>
+<td>key-value形式打印命令行标志以及系统属性</td>
+</tr>
+<tr>
+<td>-flags</td>
+<td>key-value形式打印命令行标志</td>
+</tr>
+<tr>
+<td>-sysprops</td>
+<td>key-value形式打印系统属性</td>
+</tr>
+<tr>
+<td>-h或-help</td>
+<td>打印帮助信息</td>
+</tr>
+</tbody>
+</table>
+<h5 id="jmap"><a href="#jmap" class="headerlink" title="jmap"></a>jmap</h5><p>打印共享对象内存映射或给定进程或核心文件或远程调试服务器的堆内存细节，与jinfo使用相似。</p>
+<ul>
+<li>命令用法：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">jmap [ option ] pid</span><br><span class="line">jmap [ option ] executable core</span><br><span class="line">jmap [ option ] [server-id@]remote-hostname-or-IP</span><br></pre></td></tr></table></figure>
+<p>这些选项参数是互斥的，选项紧跟在命令名之后。</p>
+<ul>
+<li>参数与jinfo一致。</li>
+<li>option：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>no option</td>
+<td>打印共享对象映射。对于加载到目标vm中的每个共享对象，将打印开始地址、映射大小和共享对象文件的完整路径</td>
+</tr>
+<tr>
+<td>-heap</td>
+<td>打印堆摘要，打印使用的GC算法、堆配置和按生成的堆使用情况</td>
+</tr>
+<tr>
+<td>-histo</td>
+<td>打印堆的直方图。对于每个Java类，都会打印对象数、内存大小（字节）和完全限定的类名。vm内部类名以“*”前缀打印。</td>
+</tr>
+<tr>
+<td>-permstat</td>
+<td>打印类加载程序的Java堆永久生成的统计数据。对于每个类加载器，都会打印其名称、活动性、地址、父类加载器以及已加载的类的数量和大小</td>
+</tr>
+<tr>
+<td>-h或-help</td>
+<td>打印帮助信息</td>
+</tr>
+</tbody>
+</table>
+<h5 id="jstack"><a href="#jstack" class="headerlink" title="jstack"></a>jstack</h5><p>为给定的Java进程或核心文件或远程调试服务器打印Java线程的Java堆栈跟踪。对于每个Java框架，打印完整的类名、方法名称、“BCI”（字节代码索引）和行号（如果可用的话）。</p>
+<ul>
+<li>命令用法：</li>
+</ul>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">jmap [ option ] pid</span><br><span class="line">jmap [ option ] executable core</span><br><span class="line">jmap [ option ] [server-id@]remote-hostname-or-IP</span><br></pre></td></tr></table></figure>
+<ul>
+<li>参数与jinfo一致。</li>
+<li>option：</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>-m</td>
+<td>打印混合模式（Java和本地C/C++框架）堆栈跟踪</td>
+</tr>
+</tbody>
+</table>
+<h4 id="图形界面工具"><a href="#图形界面工具" class="headerlink" title="图形界面工具"></a>图形界面工具</h4><p>常用的包括：jconsole、jvisualvm。</p>
+<h5 id="jconsole"><a href="#jconsole" class="headerlink" title="jconsole"></a>jconsole</h5><p>启动程序为jdk安装目录bin下的jconsole.exe，打开后选择要监控的进程即可展示出如下窗口：<br><img src="https://img-blog.csdnimg.cn/20190923101552578.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="jconsole界面"></p>
+<h5 id="jvisualvm"><a href="#jvisualvm" class="headerlink" title="jvisualvm"></a>jvisualvm</h5><p>启动程序为jdk安装目录bin下的jvisualvm.exe，打开后选择要监控的进程即可展示出如下窗口：<br><img src="https://img-blog.csdnimg.cn/20190923101844797.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="jvisualvm界面"><br>本文参考：</p>
+<blockquote>
+<p><a href="https://docs.oracle.com/javase/1.5.0/docs/tooldocs/#manage" target="_blank" rel="noopener">https://docs.oracle.com/javase/1.5.0/docs/tooldocs/#manage</a></p>
+</blockquote>
+]]></content>
       <categories>
         <category>Java</category>
       </categories>
@@ -115,17 +615,47 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[tomcat自动部署war包到ROOT目录]]></title>
-    <url>%2F2019%2F09%2F19%2Ftomcat%E8%87%AA%E5%8A%A8%E9%83%A8%E7%BD%B2war%E5%8C%85%E5%88%B0ROOT%E7%9B%AE%E5%BD%95%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章说明了tomcat自动部署war包到ROOT目录。 需求部署war包到tomcat，访问路径为localhost:8080，不带项目名称。直接放到webapps下，自动解压后，访问路径需要带项目名称。 部署步骤 解压tomcat包。 在根目录下创建一个新的文件夹wars，并将要部署的war包放进去。 删除原本webapps下的所有文件。 修改conf目录下server.xml，在文件末尾Host标签中加上如下配置: 1&lt;Context path=&quot;/&quot; docBase=&quot;../wars/project.war&quot; reloadable=&quot;true&quot; crossContext=&quot;true&quot; /&gt; 启动tomcat，会将war自动解压到webapps下的ROOT目录，这样就可以直接通过localhost:8080访问项目了。 注意事项 一定要删除webapps下的所有文件。 创建新的目录存放要部署的war包，放到webapps下会自动解压，这样ROOT和webapps下都会有解压开的项目。]]></content>
+    <title>tomcat自动部署war包到ROOT目录</title>
+    <url>/2019/09/19/tomcat%E8%87%AA%E5%8A%A8%E9%83%A8%E7%BD%B2war%E5%8C%85%E5%88%B0ROOT%E7%9B%AE%E5%BD%95/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章说明了tomcat自动部署war包到ROOT目录。</p></div><a id="more"></a> 
+<h6 id="需求"><a href="#需求" class="headerlink" title="需求"></a>需求</h6><p>部署war包到tomcat，访问路径为localhost:8080，不带项目名称。直接放到webapps下，自动解压后，访问路径需要带项目名称。</p>
+<h6 id="部署步骤"><a href="#部署步骤" class="headerlink" title="部署步骤"></a>部署步骤</h6><ol>
+<li>解压tomcat包。</li>
+<li>在根目录下创建一个新的文件夹wars，并将要部署的war包放进去。</li>
+<li>删除原本webapps下的所有文件。</li>
+<li><p>修改conf目录下server.xml，在文件末尾<strong>Host</strong>标签中加上如下配置:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;Context path=&quot;/&quot; docBase=&quot;../wars/project.war&quot; reloadable=&quot;true&quot; crossContext=&quot;true&quot; /&gt;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>启动tomcat，会将war自动解压到webapps下的ROOT目录，这样就可以直接通过localhost:8080访问项目了。</p>
+</li>
+</ol>
+<h6 id="注意事项"><a href="#注意事项" class="headerlink" title="注意事项"></a>注意事项</h6><ul>
+<li>一定要删除webapps下的所有文件。</li>
+<li>创建新的目录存放要部署的war包，放到webapps下会自动解压，这样ROOT和webapps下都会有解压开的项目。</li>
+</ul>
+]]></content>
       <categories>
         <category>Java</category>
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[堆内存空间和内存分配策略]]></title>
-    <url>%2F2019%2F09%2F03%2F%E5%A0%86%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4%E5%92%8C%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本编文章总结了堆内存空间结构和内存分配策略。 堆内存空间结构Java 堆主要分为2个区域-年轻代与老年代，年轻代包括Eden 区和 Survivor 区，Survivor 区又分From区和 To区。如下图： Eden区对象会优先在新生代 Eden 区中进行分配，当 Eden 区空间不足时，虚拟机会使用复制算法发起一次 Minor GC（Young GC），清除掉垃圾对象。之后，Eden 区中绝大部分对象会被回收，而那些无需回收的存活对象，将会进到 Survivor 的 From 区（From 区内存不足时，直接进入 Old 区）。 Survivor区Survivor 区相当于是 Eden 区和 Old 区的一个缓冲区。如果没有Survivor 区域，Old区将很快被填满，就会触发Major GC（因为Major GC一般伴随着Minor GC，也可以看做触发了Full GC）。Survivor 的存在意义就是减少被送到老年代的对象，进而减少 Major GC 的发生。Survivor 又分为2个区，一个是 From 区，一个是 To 区。每次执行 Minor GC，会将 Eden 区和 From 存活的对象放到 Survivor 的 To 区（To 区内存不足时，直接进入 Old 区）。 为什么要将Survivor区分成From和To两个区？为了解决内存碎片化的问题。Minor GC 执行后，Eden 区会清空，存活的对象放到了 Survivor 区，而之前 Survivor 区中的对象，可能也有一些是需要被清除的。这时候JVM要使用标记清除算法去清除垃圾对象，而标记清除算法最大的问题就是内存碎片，由于在Eden区中有很多对象是“朝生夕死”的，所以必然会让内存产生严重的碎片化。Survivor 有2个区域，每次 Minor GC时，会将之前 Eden 区和 From 区中的存活对象复制到 To 区域。第二次 Minor GC 时，再将 Eden 区和 To 区中的存活对象再复制到 From 区域，以此反复。这样一来，总有一个Survivor区域是空闲的。这样就解决了内存碎片的问题。 Old区Old区据着2/3的堆内存空间，当对象从新生代中存活下来，就会被拷贝到这里。Major GC 会清理Old区中的对象，每次Major GC 都会触发“Stop-The-World”。内存越大，执行的时间也就越长。由于老年代中对象存活率很高，采用复制算法效率很低，所以老年代垃圾收集采用的是标记整理算法。 内存分配策略内存分配策略主要有以下几点： 对象优先分配在Eden区，如果Eden区没有足够的空间进行分配时，虚拟机执行一次MinorGC。 大对象直接进入老年代（需要大量连续内存空间的对象）。这样做的目的是避免在Eden区和两个Survivor区之间发生大量的内存拷贝（新生代采用复制算法收集内存）。 长期存活的对象进入老年代。虚拟机为每个对象定义了一个年龄（Age Count）计数器，如果对象经过了1次Minor GC那么对象会进入Survivor区，之后每经过一次Minor GC那么对象的年龄加1，直到达到阀值（默认15次），对象进入老年区。 动态判断对象的年龄。如果Survivor区中相同年龄的所有对象大小的总和大于Survivor空间的一半，年龄大于或等于该年龄的对象可以直接进入老年代。 空间分配担保。每次进行Minor GC时，JVM会计算Survivor区移至老年区的对象的平均大小，如果这个值大于老年区的剩余值大小则进行一次Full GC，如果小于检查HandlePromotionFailure设置，如果true则只进行Monitor GC,如果false则进行Full GC。]]></content>
+    <title>堆内存空间和内存分配策略</title>
+    <url>/2019/09/03/%E5%A0%86%E5%86%85%E5%AD%98%E7%A9%BA%E9%97%B4%E5%92%8C%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E7%AD%96%E7%95%A5/</url>
+    <content><![CDATA[<div class="note danger"><p>&emsp;&emsp;本编文章总结了堆内存空间结构和内存分配策略。</p></div><a id="more"></a> 
+<h5 id="堆内存空间结构"><a href="#堆内存空间结构" class="headerlink" title="堆内存空间结构"></a>堆内存空间结构</h5><p>Java 堆主要分为2个区域-年轻代与老年代，年轻代包括Eden 区和 Survivor 区，Survivor 区又分From区和 To区。如下图：<br><img src="https://img-blog.csdnimg.cn/20190914200013511.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="堆内存空间"></p>
+<h6 id="Eden区"><a href="#Eden区" class="headerlink" title="Eden区"></a>Eden区</h6><p>对象会优先在新生代 Eden 区中进行分配，当 Eden 区空间不足时，虚拟机会使用复制算法发起一次 Minor GC（Young GC），清除掉垃圾对象。之后，Eden 区中绝大部分对象会被回收，而那些无需回收的存活对象，将会进到 Survivor 的 From 区（From 区内存不足时，直接进入 Old 区）。</p>
+<h6 id="Survivor区"><a href="#Survivor区" class="headerlink" title="Survivor区"></a>Survivor区</h6><p>Survivor 区相当于是 Eden 区和 Old 区的一个缓冲区。如果没有Survivor 区域，Old区将很快被填满，就会触发Major GC（因为Major GC一般伴随着Minor GC，也可以看做触发了Full GC）。Survivor 的存在意义就是减少被送到老年代的对象，进而减少 Major GC 的发生。<br>Survivor 又分为2个区，一个是 From 区，一个是 To 区。每次执行 Minor GC，会将 Eden 区和 From 存活的对象放到 Survivor 的 To 区（To 区内存不足时，直接进入 Old 区）。</p>
+<p><strong>为什么要将Survivor区分成From和To两个区？</strong><br>为了解决内存碎片化的问题。Minor GC 执行后，Eden 区会清空，存活的对象放到了 Survivor 区，而之前 Survivor 区中的对象，可能也有一些是需要被清除的。这时候JVM要使用标记清除算法去清除垃圾对象，而标记清除算法最大的问题就是内存碎片，由于在Eden区中有很多对象是“朝生夕死”的，所以必然会让内存产生严重的碎片化。Survivor 有2个区域，每次 Minor GC时，会将之前 Eden 区和 From 区中的存活对象复制到 To 区域。第二次 Minor GC 时，再将 Eden 区和 To 区中的存活对象再复制到 From 区域，以此反复。这样一来，总有一个Survivor区域是空闲的。这样就解决了内存碎片的问题。</p>
+<h6 id="Old区"><a href="#Old区" class="headerlink" title="Old区"></a>Old区</h6><p>Old区据着2/3的堆内存空间，当对象从新生代中存活下来，就会被拷贝到这里。Major GC 会清理Old区中的对象，每次Major GC 都会触发“Stop-The-World”。内存越大，执行的时间也就越长。由于老年代中对象存活率很高，采用复制算法效率很低，所以老年代垃圾收集采用的是标记整理算法。</p>
+<h5 id="内存分配策略"><a href="#内存分配策略" class="headerlink" title="内存分配策略"></a>内存分配策略</h5><p>内存分配策略主要有以下几点：</p>
+<ul>
+<li>对象优先分配在Eden区，如果Eden区没有足够的空间进行分配时，虚拟机执行一次MinorGC。</li>
+<li>大对象直接进入老年代（需要大量连续内存空间的对象）。这样做的目的是避免在Eden区和两个Survivor区之间发生大量的内存拷贝（新生代采用复制算法收集内存）。</li>
+<li>长期存活的对象进入老年代。虚拟机为每个对象定义了一个年龄（Age Count）计数器，如果对象经过了1次Minor GC那么对象会进入Survivor区，之后每经过一次Minor GC那么对象的年龄加1，直到达到阀值（默认15次），对象进入老年区。</li>
+<li>动态判断对象的年龄。如果Survivor区中相同年龄的所有对象大小的总和大于Survivor空间的一半，年龄大于或等于该年龄的对象可以直接进入老年代。</li>
+<li>空间分配担保。每次进行Minor GC时，JVM会计算Survivor区移至老年区的对象的平均大小，如果这个值大于老年区的剩余值大小则进行一次Full GC，如果小于检查HandlePromotionFailure设置，如果true则只进行Monitor GC,如果false则进行Full GC。</li>
+</ul>
+]]></content>
       <categories>
         <category>Java</category>
       </categories>
@@ -134,9 +664,36 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[JVM垃圾收集]]></title>
-    <url>%2F2019%2F09%2F01%2FJVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;在日常开发中，我们并不需要去关注垃圾回收，因为JVM动态内存分配和内存回收已经非常成熟了。但为了排查解决线上环境出现的内存泄漏和内存溢出问题，我们还是需要对JVM有一些深入的了解。 哪些内存需要回收？在垃圾回收之前，我们需要先知道哪些垃圾需要被回收，在JVM中有两种判断“对象已死”的方法。 引用计数法简单的描述就是：引用计数法（Reference Counting）给一个对象添加一个引用计数器，每当有一个地方引用这个对象时，就给这个计数器加1；当删除对该对象的引用时，就将这个计数器减1。当计数器为0时，这个对象就被判定成为垃圾。但在对象循环引用时却不会被回收，如下代码： 12345678910111213public static class ReferenceCount &#123; public Object instance;&#125;public static void main(String[] args) &#123; ReferenceCount a = new ReferenceCount(); ReferenceCount b = new ReferenceCount(); a.instance = b; b.instance = a; a = null; b = null; System.gc();&#125; 运行时添加-XX:+PrintGCDetails参数，从打印的GC信息可以看出，两个对象如果互相引用就不会被回收，控制台打印结果如下： 可达性分析法可达性分析法（Reference Counting）的基本思路就是通过一些被称为GC Roots的对象作为起点，从这些节点开始向下搜索，搜索走过的路径被称为引用链（Reference Chain)，当一个对象到GC Roots没有任何引用链相连时（即从GC Roots节点到该节点不可达），则证明该对象没有被引用。如图：可作为GC Roots的对象主要包括： 虚拟机栈（栈帧中的本地变量表）引用的对象。此时obj为GC Root,当obj为null时,GC Root和obj的引用链断掉,obj将被回收。 123456public class Variable &#123;&#125;public void testGC() &#123; Variable obj = new Variable(); obj = null;&#125; 方法区中类静态属性引用的对象。obj为 GC Root，当obj 为 null时，会触发GC，GC Root 无法和obj所指向的 Variable对象 建立关系，会被回收。而 p 作为类的静态属性，也属于 GC Root，Prop对象依然与 GC root 建立着连接，所以此时 Prop对象并不会被回收。 12345678910public class Prop &#123;&#125;public static class Variable &#123; public static Prop p;&#125;public void testGC() &#123; Variable obj = new Variable(); obj.p = new Prop(); obj = null;&#125; 方法区中常量引用的对象。p为常量，作为GC Root，即使obj置null，p仍然能和Prop建立联系，所以不会被回收。 123456789public static class Prop &#123;&#125; public static class Variable &#123; public static final Prop p = new Prop(); &#125; public void testGC() &#123; Variable obj = new Variable(); obj = null; &#125; 本地方法栈（Native Method）引用的对象。 需要注意的是：即使一个对象未被引用，也并不一定会被回收。如果一个对象执行了finalize()方法，它仍然可以存活，而且finalize()只会执行一次。 垃圾收集算法主要包括标记-清除算法（Mark-Sweep）、复制算法（Copying）、标记整理算法（Mark-Compact）、分代收集算法（Generational Collection）。 标记清除算法分为标记和清除两个阶段，首先标记出所有需要回收的对象，标记完成之后统一对标记的对象进行回收。主要的缺点是：1、效率问题，标记和清除两个过程的效率都不高。2、空间问题，标记清除之后会产生大量的不连续的内存碎片，如果需要分配空间给大对象，就得提前触发另一次垃圾收集，腾出连续的内存空间。 复制算法复制算法是为了解决效率问题而出现的，将可用内存分成大小相等的两块，每次只使用其中的一块，当这一块用完了，就将存活的对象复制到另一块上，再将使用过的内存空间一次清理。这样做的优点是不用考虑内存碎片的问题、实现简单、运行高效。但是每次只能使用原来内存的一半。执行的示意图如下： 标记-整理算法标记整理算法的标记过程和标记清除一致，但后续步骤不是直接清除可回收对象，而是让所有存活的对象都向一端移动，然后直接清理掉边界以外的内存，如下图： 分代收集算法这种算法没有提出新的思想，只是根据对象的存活周期的不同将内存划分为几块。一般把java堆内存分为新生代和老年代，根据各个年代去选择合适的收集算法。比如：新生代垃圾收集的时候总是有大批对象被收集，只有少量对象存活，那就使用复制算法，只需要复制少量对象就可以完成垃圾收集。老年代对象存活率高就使用标记-清除或标记整理。 本文部分内容来自: &gt; 《深入理解Java虚拟机 JVM高级特性与最佳实践》 周志明 著]]></content>
+    <title>JVM垃圾收集</title>
+    <url>/2019/09/01/JVM%E5%9E%83%E5%9C%BE%E6%94%B6%E9%9B%86/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;在日常开发中，我们并不需要去关注垃圾回收，因为JVM动态内存分配和内存回收已经非常成熟了。但为了排查解决线上环境出现的内存泄漏和内存溢出问题，我们还是需要对JVM有一些深入的了解。</p></div><a id="more"></a> 
+<h5 id="哪些内存需要回收？"><a href="#哪些内存需要回收？" class="headerlink" title="哪些内存需要回收？"></a>哪些内存需要回收？</h5><p>在垃圾回收之前，我们需要先知道哪些垃圾需要被回收，在JVM中有两种判断“对象已死”的方法。</p>
+<h6 id="引用计数法"><a href="#引用计数法" class="headerlink" title="引用计数法"></a>引用计数法</h6><p>简单的描述就是：引用计数法（Reference Counting）给一个对象添加一个引用计数器，每当有一个地方引用这个对象时，就给这个计数器加1；当删除对该对象的引用时，就将这个计数器减1。当计数器为0时，这个对象就被判定成为垃圾。但在对象循环引用时却不会被回收，如下代码：</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static class ReferenceCount &#123;</span><br><span class="line">    public Object instance;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">public static void main(String[] args) &#123;</span><br><span class="line">    ReferenceCount a = new ReferenceCount();</span><br><span class="line">    ReferenceCount b = new ReferenceCount();</span><br><span class="line">    a.instance = b;</span><br><span class="line">    b.instance = a;</span><br><span class="line">    a = null;</span><br><span class="line">    b = null;</span><br><span class="line">    System.gc();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>运行时添加<strong>-XX:+PrintGCDetails</strong>参数，从打印的GC信息可以看出，两个对象如果互相引用就不会被回收，控制台打印结果如下：<br><img src="https://img-blog.csdnimg.cn/20190902193628985.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="引用计数算法GC详细信息"></p>
+<h6 id="可达性分析法"><a href="#可达性分析法" class="headerlink" title="可达性分析法"></a>可达性分析法</h6><p>可达性分析法（Reference Counting）的基本思路就是通过一些被称为GC Roots的对象作为起点，从这些节点开始向下搜索，搜索走过的路径被称为引用链（Reference Chain)，当一个对象到GC Roots没有任何引用链相连时（即从GC Roots节点到该节点不可达），则证明该对象没有被引用。如图：<br><img src="https://img-blog.csdnimg.cn/20190914173025694.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>可作为GC Roots的对象主要包括：</p>
+<ul>
+<li><p>虚拟机栈（栈帧中的本地变量表）引用的对象。此时obj为GC Root,当obj为null时,GC Root和obj的引用链断掉,obj将被回收。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Variable &#123;</span><br><span class="line">&#125;</span><br><span class="line">public void testGC() &#123;</span><br><span class="line">	Variable obj = new Variable();</span><br><span class="line">	obj = null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>方法区中类静态属性引用的对象。obj为 GC Root，当obj 为 null时，会触发GC，GC Root 无法和obj所指向的 Variable对象 建立关系，会被回收。而 p 作为类的静态属性，也属于 GC Root，Prop对象依然与 GC root 建立着连接，所以此时 Prop对象并不会被回收。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class Prop &#123;</span><br><span class="line">&#125;</span><br><span class="line">public static class Variable &#123;</span><br><span class="line">    public static Prop p;</span><br><span class="line">&#125;</span><br><span class="line">public void testGC() &#123;</span><br><span class="line">    Variable obj = new Variable();</span><br><span class="line">    obj.p = new Prop();</span><br><span class="line">    obj = null;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>方法区中常量引用的对象。p为常量，作为GC Root，即使obj置null，p仍然能和Prop建立联系，所以不会被回收。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public static class Prop &#123;</span><br><span class="line">&#125;</span><br><span class="line"> public static class Variable &#123;</span><br><span class="line"> 	 public static final Prop p = new Prop();</span><br><span class="line"> &#125;</span><br><span class="line"> public void testGC() &#123;</span><br><span class="line">     Variable obj = new Variable();</span><br><span class="line">     obj = null;</span><br><span class="line"> &#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>本地方法栈（Native Method）引用的对象。</p>
+</li>
+</ul>
+<p>需要注意的是：<strong>即使一个对象未被引用，也并不一定会被回收。如果一个对象执行了finalize()方法，它仍然可以存活，而且finalize()只会执行一次。</strong></p>
+<h5 id="垃圾收集算法"><a href="#垃圾收集算法" class="headerlink" title="垃圾收集算法"></a>垃圾收集算法</h5><p>主要包括标记-清除算法（Mark-Sweep）、复制算法（Copying）、标记整理算法（Mark-Compact）、分代收集算法（Generational Collection）。</p>
+<h6 id="标记清除算法"><a href="#标记清除算法" class="headerlink" title="标记清除算法"></a>标记清除算法</h6><p>分为标记和清除两个阶段，首先标记出所有需要回收的对象，标记完成之后统一对标记的对象进行回收。主要的缺点是：<br>1、效率问题，标记和清除两个过程的效率都不高。<br>2、空间问题，标记清除之后会产生大量的不连续的内存碎片，如果需要分配空间给大对象，就得提前触发另一次垃圾收集，腾出连续的内存空间。<br><img src="https://img-blog.csdnimg.cn/20190914171706555.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="复制算法"><a href="#复制算法" class="headerlink" title="复制算法"></a>复制算法</h6><p>复制算法是为了解决效率问题而出现的，将可用内存分成大小相等的两块，每次只使用其中的一块，当这一块用完了，就将存活的对象复制到另一块上，再将使用过的内存空间一次清理。这样做的优点是不用考虑内存碎片的问题、实现简单、运行高效。但是每次只能使用原来内存的一半。<br>执行的示意图如下：<br><img src="https://img-blog.csdnimg.cn/2019091418595039.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="复制算法"></p>
+<h6 id="标记-整理算法"><a href="#标记-整理算法" class="headerlink" title="标记-整理算法"></a>标记-整理算法</h6><p>标记整理算法的标记过程和标记清除一致，但后续步骤不是直接清除可回收对象，而是让所有存活的对象都向一端移动，然后直接清理掉边界以外的内存，如下图：<br><img src="https://img-blog.csdnimg.cn/20190914192512630.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="标记整理算法"></p>
+<h6 id="分代收集算法"><a href="#分代收集算法" class="headerlink" title="分代收集算法"></a>分代收集算法</h6><p>这种算法没有提出新的思想，只是根据对象的存活周期的不同将内存划分为几块。一般把java堆内存分为新生代和老年代，根据各个年代去选择合适的收集算法。比如：新生代垃圾收集的时候总是有大批对象被收集，只有少量对象存活，那就使用复制算法，只需要复制少量对象就可以完成垃圾收集。老年代对象存活率高就使用标记-清除或标记整理。</p>
+<pre><code>本文部分内容来自:
+&gt; 《深入理解Java虚拟机 JVM高级特性与最佳实践》 周志明 著
+</code></pre>]]></content>
       <categories>
         <category>Java</category>
       </categories>
@@ -145,9 +702,48 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[JVM运行时数据区]]></title>
-    <url>%2F2019%2F08%2F27%2FJVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;本篇文章总结了JVM运行时数据区。 简介JVM在执行java程序的过程中会把它管理的内存划分为若干个不同的数据区域。主要分为五个区域：堆(Heap)、栈(Stack)、本地方法栈(Native Stack)、方法区(Method Area)、程序计数器(Program Count Register)。如图: 程序计数器（Program Counter Register） 处于线程独占区。 较小的内存空间，可以看作是当前线程所执行的字节码的行号指示器。 如果线程执行的是Java方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址。如果正在执行的是native方法，这个计数器的值为undefined。 此区域是唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域。 虚拟机栈（Java Virtual Machine Stacks）虚拟机栈描述的是Java方法执行的动态内存模型，处于线程独占区。 栈帧栈帧是方法运行时的基本数据结构。每个方法执行，都会创建一个栈帧，伴随着方法从创建到执行完成。用来存储局部变量表、操作数栈、动态链接、方法出口等。 局部变量表存放编译期可知的各种基本数据类型,对象引用和returnAddress类型。如果线程请求的栈深度大于虚拟机允许的深度，抛出StackOverFlowError，如果虚拟机可动态扩展，但无法申请到足够的内存，会抛出OutOfMemoryError。 本地方法栈（Native Method Stack）与虚拟机栈类似，区别为虚拟机栈执行Java方法，本地方法栈执行Native方法。 Java堆（Java Heap） 处于线程共享区。 所有线程共享的一块内存区域，虚拟机启动时创建。 存放对象实例，几乎所有对象实例都在这里分配内存。 垃圾收集的主要区域。 可细分为：新生代和老年代。 方法区（Method Area） 处于线程共享区。 存储已被加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。 无法满足内存分配需求时，抛出OutOfMemoryError。 运行时常量池（Runtime Constant Pool） 运行时常量池是方法区的一部分。 存放编译期生成的各种字面量和符号引用。 直接内存（Direct Memory） 不是虚拟机运行时数据区的一部分，也不是JVM规范中定义的内存区域。 （New Input/Output）可使用Native函数库直接分配堆外内存，通过一个存储在Java堆中的DirectByteBuffer对象作为这块内存的引用来操作这块内存。 动态扩展时可能会抛出OutOfMemoryError。 参考： 《深入理解Java虚拟机 JVM高级特性与最佳实践》 周志明 著]]></content>
+    <title>JVM运行时数据区</title>
+    <url>/2019/08/27/JVM%E8%BF%90%E8%A1%8C%E6%97%B6%E6%95%B0%E6%8D%AE%E5%8C%BA/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章总结了JVM运行时数据区。</p></div><a id="more"></a> 
+<h5 id="简介"><a href="#简介" class="headerlink" title="简介"></a>简介</h5><p>JVM在执行java程序的过程中会把它管理的内存划分为若干个不同的数据区域。主要分为五个区域：堆(Heap)、栈(Stack)、本地方法栈(Native Stack)、方法区(Method Area)、程序计数器(Program Count Register)。如图:<br><img src="https://img-blog.csdnimg.cn/2019082717081887.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="JVM运行时数据区"></p>
+<h5 id="程序计数器（Program-Counter-Register）"><a href="#程序计数器（Program-Counter-Register）" class="headerlink" title="程序计数器（Program Counter Register）"></a>程序计数器（Program Counter Register）</h5><ul>
+<li>处于线程独占区。</li>
+<li>较小的内存空间，可以看作是当前线程所执行的字节码的行号指示器。</li>
+<li>如果线程执行的是Java方法，这个计数器记录的是正在执行的虚拟机字节码指令的地址。如果正在执行的是native方法，这个计数器的值为undefined。</li>
+<li>此区域是唯一一个在Java虚拟机规范中没有规定任何OOM情况的区域。</li>
+</ul>
+<h5 id="虚拟机栈（Java-Virtual-Machine-Stacks）"><a href="#虚拟机栈（Java-Virtual-Machine-Stacks）" class="headerlink" title="虚拟机栈（Java Virtual Machine Stacks）"></a>虚拟机栈（Java Virtual Machine Stacks）</h5><p>虚拟机栈描述的是Java方法执行的动态内存模型，处于线程独占区。</p>
+<ul>
+<li>栈帧<br>栈帧是方法运行时的基本数据结构。每个方法执行，都会创建一个栈帧，伴随着方法从创建到执行完成。用来存储局部变量表、操作数栈、动态链接、方法出口等。</li>
+<li>局部变量表<br>存放编译期可知的各种基本数据类型,对象引用和returnAddress类型。如果线程请求的栈深度大于虚拟机允许的深度，抛出StackOverFlowError，如果虚拟机可动态扩展，但无法申请到足够的内存，会抛出OutOfMemoryError。</li>
+</ul>
+<h5 id="本地方法栈（Native-Method-Stack）"><a href="#本地方法栈（Native-Method-Stack）" class="headerlink" title="本地方法栈（Native Method Stack）"></a>本地方法栈（Native Method Stack）</h5><p>与虚拟机栈类似，区别为虚拟机栈执行Java方法，本地方法栈执行Native方法。</p>
+<h5 id="Java堆（Java-Heap）"><a href="#Java堆（Java-Heap）" class="headerlink" title="Java堆（Java Heap）"></a>Java堆（Java Heap）</h5><ul>
+<li>处于线程共享区。</li>
+<li>所有线程共享的一块内存区域，虚拟机启动时创建。</li>
+<li>存放对象实例，几乎所有对象实例都在这里分配内存。</li>
+<li>垃圾收集的主要区域。</li>
+<li>可细分为：新生代和老年代。</li>
+</ul>
+<h5 id="方法区（Method-Area）"><a href="#方法区（Method-Area）" class="headerlink" title="方法区（Method Area）"></a>方法区（Method Area）</h5><ul>
+<li>处于线程共享区。</li>
+<li>存储已被加载的类信息、常量、静态变量、即时编译器编译后的代码等数据。</li>
+<li>无法满足内存分配需求时，抛出OutOfMemoryError。</li>
+</ul>
+<h5 id="运行时常量池（Runtime-Constant-Pool）"><a href="#运行时常量池（Runtime-Constant-Pool）" class="headerlink" title="运行时常量池（Runtime Constant Pool）"></a>运行时常量池（Runtime Constant Pool）</h5><ul>
+<li>运行时常量池是方法区的一部分。</li>
+<li>存放编译期生成的各种字面量和符号引用。</li>
+</ul>
+<h5 id="直接内存（Direct-Memory）"><a href="#直接内存（Direct-Memory）" class="headerlink" title="直接内存（Direct Memory）"></a>直接内存（Direct Memory）</h5><ul>
+<li>不是虚拟机运行时数据区的一部分，也不是JVM规范中定义的内存区域。</li>
+<li>（New Input/Output）可使用Native函数库直接分配堆外内存，通过一个存储在Java堆中的DirectByteBuffer对象作为这块内存的引用来操作这块内存。</li>
+<li>动态扩展时可能会抛出OutOfMemoryError。</li>
+</ul>
+<p>参考：</p>
+<blockquote>
+<p>《深入理解Java虚拟机 JVM高级特性与最佳实践》 周志明 著</p>
+</blockquote>
+]]></content>
       <categories>
         <category>Java</category>
       </categories>
@@ -156,9 +752,29 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Executor线程池框架]]></title>
-    <url>%2F2019%2F08%2F09%2FExecutor%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%A1%86%E6%9E%B6%2F</url>
-    <content type="text"><![CDATA[Executor简介Executor是JDK1.5之后引入的，其内部使用了线程池机制，通过该框架来控制线程的启动、执行和关闭，可以简化并发编程的操作。如下为Executor相关类图: Executor使用Java提供了Executors工具类，实际使用中我们可以根据需要选择合适的方法去创建和使用线程池。以下为四种主要的方法: newFixedThreadPool(nThreads)，创建一个固定大小的线程池，可控制线程最大并发数，当无可用线程时，任务会在队列中等待。示例代码: 1234567ExecutorService executorService = Executors.newFixedThreadPool(3);for (int i = 0; i &lt; 10; i++) &#123; executorService.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;); &#125;);&#125;executorService.shutdown(); newCachedThreadPool，创建一个可缓存线程池，如果线程池长度超过处理需要，可回收空闲线程，若无可回收线程，则新建。示例代码: 1234567ExecutorService executorService1 = Executors.newCachedThreadPool();for (int i = 0; i &lt; 10; i++) &#123; executorService.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;); &#125;);&#125;executorService.shutdown(); newScheduledThreadPool，创建一个固定长度的线程池，支持定时及周期性任务执行。示例代码: 12345678// 延迟0秒int initialDelay = 0;// 每隔三秒执行int period = 3;ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);executor.scheduleAtFixedRate(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;);&#125;, initialDelay, period, TimeUnit.SECONDS); newSingleThreadExecutor，创建一个单线程的线程池，它可以保证所有任务顺序执行。示例代码:12345678ExecutorService executorService = Executors.newSingleThreadExecutor();for (int i = 0; i &lt; 5; i++) &#123; final int index = i; executorService.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- &quot; + &quot;i=&quot; + index); &#125;); &#125; executorService.shutdown(); 执行结果如下: 在阿里的Java开发者手册中，是强制不允许使用Executors去创建线程池，如下图实际使用时，可以参考。]]></content>
+    <title>Executor线程池框架</title>
+    <url>/2019/08/09/Executor%E7%BA%BF%E7%A8%8B%E6%B1%A0%E6%A1%86%E6%9E%B6/</url>
+    <content><![CDATA[<h3 id="Executor简介"><a href="#Executor简介" class="headerlink" title="Executor简介"></a>Executor简介</h3><p>Executor是JDK1.5之后引入的，其内部使用了线程池机制，通过该框架来控制线程的启动、执行和关闭，可以简化并发编程的操作。<br>如下为Executor相关类图:<br><img src="https://img-blog.csdnimg.cn/20190809150411398.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="Executor类图"></p>
+<h3 id="Executor使用"><a href="#Executor使用" class="headerlink" title="Executor使用"></a>Executor使用</h3><p>Java提供了Executors工具类，实际使用中我们可以根据需要选择合适的方法去创建和使用线程池。以下为四种主要的方法:</p>
+<ul>
+<li><p>newFixedThreadPool(nThreads)，创建一个固定大小的线程池，可控制线程最大并发数，当无可用线程时，任务会在队列中等待。示例代码:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ExecutorService executorService = Executors.newFixedThreadPool(3);</span><br><span class="line">for (int i = 0; i &lt; 10; i++) &#123;</span><br><span class="line">       executorService.execute(() -&gt; &#123;</span><br><span class="line">           System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;);</span><br><span class="line">       &#125;);</span><br><span class="line">&#125;</span><br><span class="line">executorService.shutdown();</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>newCachedThreadPool，创建一个可缓存线程池，如果线程池长度超过处理需要，可回收空闲线程，若无可回收线程，则新建。示例代码:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ExecutorService executorService1 = Executors.newCachedThreadPool();</span><br><span class="line">for (int i = 0; i &lt; 10; i++) &#123;</span><br><span class="line">    executorService.execute(() -&gt; &#123;</span><br><span class="line">        System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;);</span><br><span class="line">    &#125;);</span><br><span class="line">&#125;</span><br><span class="line">executorService.shutdown();</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>newScheduledThreadPool，创建一个固定长度的线程池，支持定时及周期性任务执行。示例代码:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">// 延迟0秒</span><br><span class="line">int initialDelay = 0;</span><br><span class="line">// 每隔三秒执行</span><br><span class="line">int period = 3;</span><br><span class="line">ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);</span><br><span class="line">executor.scheduleAtFixedRate(() -&gt; &#123;</span><br><span class="line">    System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;);</span><br><span class="line">&#125;, initialDelay, period, TimeUnit.SECONDS);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<ul>
+<li>newSingleThreadExecutor，创建一个单线程的线程池，它可以保证所有任务顺序执行。示例代码:<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">ExecutorService executorService = Executors.newSingleThreadExecutor();</span><br><span class="line">for (int i = 0; i &lt; 5; i++) &#123;</span><br><span class="line">     final int index = i;</span><br><span class="line">     executorService.execute(() -&gt; &#123;</span><br><span class="line">         System.out.println(Thread.currentThread().getName() + &quot; -- &quot; + &quot;i=&quot; + index);</span><br><span class="line">     &#125;);</span><br><span class="line"> &#125;</span><br><span class="line"> executorService.shutdown();</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>执行结果如下:</p>
+<p><img src="https://img-blog.csdnimg.cn/20190809153827635.png" alt="newSingleThreadExecutor执行结果图"></p>
+<p><strong>在阿里的Java开发者手册中，是强制不允许使用Executors去创建线程池，如下图</strong><br><img src="https://img-blog.csdnimg.cn/20190809154420628.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="Executors问题">实际使用时，可以参考。</p>
+]]></content>
       <categories>
         <category>并发</category>
       </categories>
@@ -167,9 +783,53 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Java线程池-ThreadPoolExecutor]]></title>
-    <url>%2F2019%2F08%2F08%2FJava%E7%BA%BF%E7%A8%8B%E6%B1%A0-ThreadPoolExecutor%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;多线程虽然能够最大限度发挥多核计算机的计算能力，但是如果使用不当，反而会对系统造成负担。线程本身也要占用内存空间，大量的线程会占用大量内存资源，为了避免重复的创建线程，就需要一个线程管理者来创建和销毁线程。 什么是线程池?WIKI: 线程池（ThreadPool）是一种线程使用模式。线程过多会带来调度开销，进而影响缓存局部性和整体性能。而线程池维护着多个线程，等待着监督管理者分配可并发执行的任务。这避免了在处理短时间任务时创建与销毁线程的代价。线程池不仅能够保证内核的充分利用，还能防止过分调度。可用线程数量应该取决于可用的并发处理器、处理器内核、内存、网络sockets等的数量。 为什么要使用线程池?在Java中，要启动一个线程，通常有两种方式: 继承Thread类。 实现Runnable接口。 这么做会有以下缺点: 每次new Thread新建对象性能差。 线程缺乏统一管理，可能无限制新建线程，相互之间竞争，及可能占用过多系统资源导致死机或oom。 缺乏更多功能，如定时执行、定期执行、线程中断。 线程池的优点： 重用存在的线程，减少对象创建、消亡的开销，性能佳。 可有效控制最大并发线程数，提高系统资源的使用率，同时避免过多资源竞争，避免堵塞。 提供定时执行、定期执行、单线程、并发数控制等功能。 如何使用线程池？Java中提供了ThreadPoolExecutor类，此类提供了许多构造函数，可通过如下方式创建使用线程池。12345678910111213141516171819202122232425262728293031323334353637public class ThreadPoolDemo &#123; static AtomicInteger threadNumber = new AtomicInteger(1); public static void main(String[] args) &#123; int corePoolSize = 2; int maximumPoolSize = 5; long keepAliveTime = 60; ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor( corePoolSize, maximumPoolSize, keepAliveTime, TimeUnit.SECONDS, new LinkedBlockingDeque&lt;&gt;(), new ThreadFactory() &#123; @Override public Thread newThread(Runnable r) &#123; // 自己制定规则 return new Thread(Thread.currentThread().getThreadGroup(), r, &quot;线程&quot; + threadNumber.getAndIncrement(), 0); &#125; &#125;, new RejectedExecutionHandler() &#123; @Override public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) &#123; throw new RuntimeException(); &#125; &#125; ); for (int i = 0; i &lt; 10; i++) &#123; threadPoolExecutor.execute(() -&gt; &#123; System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;); &#125;); &#125; threadPoolExecutor.shutdown(); &#125;&#125; ThreadPoolExecutor构造函数参数说明,实际使用时选择合适的构造函数即可: corePoolSize，核心线程数量，线程池的基本大小，即在没有任务需要执行的时候线程池的大小。 maximumPoolSize，线程池中允许的最大线程数，线程池中的当前线程数目不会超过该值。如果队列中任务已满，并且当前线程个数小于maximumPoolSize，那么会创建新的线程来执行任务。 keepAliveTime，无任务执行时，最多保持多久时间终止。 unit,keepAliveTime的时间单位。 workQueue,阻塞队列,根据业务场景选择合适的阻塞队列。 threadFactory，线程工厂。 rejectHandler，拒绝任务时的策略。 ThreadPoolExecutor类常用方法 execute，提交任务给线程池执行。 submit，提交任务，能够返回执行结果 shutdown，等待任务执行完后，关闭线程池。 shutdownNow，关闭线程池，不等待任务执行完。 getTaskCount，已执行和未执行的任务总数。 getActiveCount，正在执行的任务总数。 getPoolSize，线程池当前的线程数量。 getCompletedTaskCount，已完成的任务数量。]]></content>
+    <title>Java线程池-ThreadPoolExecutor</title>
+    <url>/2019/08/08/Java%E7%BA%BF%E7%A8%8B%E6%B1%A0-ThreadPoolExecutor/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;多线程虽然能够最大限度发挥多核计算机的计算能力，但是如果使用不当，反而会对系统造成负担。线程本身也要占用内存空间，大量的线程会占用大量内存资源，为了避免重复的创建线程，就需要一个线程管理者来创建和销毁线程。</p></div><a id="more"></a> 
+<h4 id="什么是线程池"><a href="#什么是线程池" class="headerlink" title="什么是线程池?"></a>什么是线程池?</h4><p>WIKI: </p>
+<blockquote>
+<p>线程池（ThreadPool）是一种线程使用模式。线程过多会带来调度开销，进而影响缓存局部性和整体性能。而线程池维护着多个线程，等待着监督管理者分配可并发执行的任务。这避免了在处理短时间任务时创建与销毁线程的代价。线程池不仅能够保证内核的充分利用，还能防止过分调度。可用线程数量应该取决于可用的并发处理器、处理器内核、内存、网络sockets等的数量。</p>
+</blockquote>
+<h4 id="为什么要使用线程池"><a href="#为什么要使用线程池" class="headerlink" title="为什么要使用线程池?"></a>为什么要使用线程池?</h4><p>在Java中，要启动一个线程，通常有两种方式:</p>
+<ul>
+<li>继承Thread类。</li>
+<li>实现Runnable接口。</li>
+</ul>
+<p><strong>这么做会有以下缺点</strong>:</p>
+<ul>
+<li>每次new Thread新建对象性能差。</li>
+<li>线程缺乏统一管理，可能无限制新建线程，相互之间竞争，及可能占用过多系统资源导致死机或oom。</li>
+<li>缺乏更多功能，如定时执行、定期执行、线程中断。</li>
+</ul>
+<p><strong>线程池的优点</strong>：</p>
+<ul>
+<li>重用存在的线程，减少对象创建、消亡的开销，性能佳。</li>
+<li>可有效控制最大并发线程数，提高系统资源的使用率，同时避免过多资源竞争，避免堵塞。 </li>
+<li>提供定时执行、定期执行、单线程、并发数控制等功能。</li>
+</ul>
+<h4 id="如何使用线程池？"><a href="#如何使用线程池？" class="headerlink" title="如何使用线程池？"></a>如何使用线程池？</h4><p>Java中提供了ThreadPoolExecutor类，此类提供了许多构造函数，可通过如下方式创建使用线程池。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">public class ThreadPoolDemo &#123;</span><br><span class="line">    static AtomicInteger threadNumber = new AtomicInteger(1);</span><br><span class="line"></span><br><span class="line">    public static void main(String[] args) &#123;</span><br><span class="line">        int corePoolSize = 2;</span><br><span class="line">        int maximumPoolSize = 5;</span><br><span class="line">        long keepAliveTime = 60;</span><br><span class="line">        ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(</span><br><span class="line">                corePoolSize,</span><br><span class="line">                maximumPoolSize,</span><br><span class="line">                keepAliveTime,</span><br><span class="line">                TimeUnit.SECONDS,</span><br><span class="line">                new LinkedBlockingDeque&lt;&gt;(),</span><br><span class="line">                new ThreadFactory() &#123;</span><br><span class="line">                    @Override</span><br><span class="line">                    public Thread newThread(Runnable r) &#123;</span><br><span class="line">                        // 自己制定规则</span><br><span class="line">                        return new Thread(Thread.currentThread().getThreadGroup(), r,</span><br><span class="line">                                &quot;线程&quot; + threadNumber.getAndIncrement(),</span><br><span class="line">                                0);</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;,</span><br><span class="line">                new RejectedExecutionHandler() &#123;</span><br><span class="line">                    @Override</span><br><span class="line">                    public void rejectedExecution(Runnable r, ThreadPoolExecutor executor) &#123;</span><br><span class="line">                        throw new RuntimeException();</span><br><span class="line">                    &#125;</span><br><span class="line">                &#125;</span><br><span class="line">        );</span><br><span class="line">        for (int i = 0; i &lt; 10; i++) &#123;</span><br><span class="line">            threadPoolExecutor.execute(() -&gt; &#123;</span><br><span class="line">                System.out.println(Thread.currentThread().getName() + &quot; -- executed&quot;);</span><br><span class="line">            &#125;);</span><br><span class="line">        &#125;</span><br><span class="line">        threadPoolExecutor.shutdown();</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>ThreadPoolExecutor构造函数参数说明,实际使用时选择合适的构造函数即可:</strong></p>
+<ul>
+<li>corePoolSize，核心线程数量，线程池的基本大小，即在没有任务需要执行的时候线程池的大小。</li>
+<li>maximumPoolSize，线程池中允许的最大线程数，线程池中的当前线程数目不会超过该值。如果队列中任务已满，并且当前线程个数小于maximumPoolSize，那么会创建新的线程来执行任务。</li>
+<li>keepAliveTime，无任务执行时，最多保持多久时间终止。</li>
+<li>unit,keepAliveTime的时间单位。</li>
+<li>workQueue,阻塞队列,根据业务场景选择合适的阻塞队列。</li>
+<li>threadFactory，线程工厂。</li>
+<li>rejectHandler，拒绝任务时的策略。</li>
+</ul>
+<p><strong>ThreadPoolExecutor类常用方法</strong></p>
+<ul>
+<li>execute，提交任务给线程池执行。</li>
+<li>submit，提交任务，能够返回执行结果</li>
+<li>shutdown，等待任务执行完后，关闭线程池。</li>
+<li>shutdownNow，关闭线程池，不等待任务执行完。</li>
+<li>getTaskCount，已执行和未执行的任务总数。</li>
+<li>getActiveCount，正在执行的任务总数。</li>
+<li>getPoolSize，线程池当前的线程数量。</li>
+<li>getCompletedTaskCount，已完成的任务数量。</li>
+</ul>
+]]></content>
       <categories>
         <category>并发</category>
       </categories>
@@ -178,9 +838,40 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Redis常见问题总结]]></title>
-    <url>%2F2019%2F08%2F05%2FRedis%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;总结Redis使用过程中的常见问题。 缓存粒度问题在往Redis中写数据的时候，要考虑粒度问题。比如，从某一张先查询出数据，放入Redis，在查询表的时候，是可以选择查询全部字段、或者部分字段的。对比一下这两种方式：全部字段：通用性好，代码维护方便，占用空间大。部分字段：占用空间小，通用性相对较差。 缓存穿透问题正常的流程是先查缓存，缓存中取不到，就查询数据库，然后把数据放进缓存，设置过期时间。而缓存穿透指的是大量请求查询一个数据库不存在的对象，每次从缓存取数据的时候，取不到就会一直去数据库查询。比如根据某个id查询数据，这个id的数据在数据库中根本就不存在，就会出现这种问题。出现原因： 业务代码问题。 恶意攻击或者网络爬虫。 解决方案一： 缓存空对象，当缓存和数据库都取不到数据时，写一个空对象到缓存，设置较短的过期时间。缺点： 需要更多的Key。 缓存层和数据层数据“短期”不一致。 解决方案二： 布隆过滤器拦截（推荐）。缺点：需要另外维护一个集合来存放缓存的Key 缓存雪崩问题缓存在同一时间内大量键过期（失效），接着来的大量请求瞬间都落在了数据库中导致数据库连接异常。解决方案： 不同维度数据设置不同的过期时间（随机因子），防止同一时间大量数据过期现象发生。 设置热点数据永不过期。 缓存击穿问题 缓存击穿是指缓存中没有但数据库中有的数据（一般是缓存时间到期），如果此时请求量并发量过大，同时读缓存没读到数据，又同时去数据库去取数据，引起数据库压力瞬间增大，造成过大压力。解决方案： 设置热点数据永不过期 加互斥锁，当数据库正在查询时，加锁，数据存入缓存后，释放锁。 无底洞问题2010年,facebook有了3000个memcache节点 ，发现问题，“加”机器性能没能提升，反而下降，更多的机器不等于更高的性能。解决方案： 优化命令:例如慢查询keys丶hgetall bigkey。 减少网络通信次数 降低接入成本:例如客户端长连接/连接池丶NIO等 四种批量优化的方法： 总结每个问题对应的解决方案都要根据实际场景来定，不能认定一种方案不考虑其他的。]]></content>
+    <title>Redis常见问题总结</title>
+    <url>/2019/08/05/Redis%E5%B8%B8%E8%A7%81%E9%97%AE%E9%A2%98%E6%80%BB%E7%BB%93/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;总结Redis使用过程中的常见问题。</p></div><a id="more"></a> 
+<h5 id="缓存粒度问题"><a href="#缓存粒度问题" class="headerlink" title="缓存粒度问题"></a>缓存粒度问题</h5><p>在往Redis中写数据的时候，要考虑粒度问题。比如，从某一张先查询出数据，放入Redis，在查询表的时候，是可以选择查询全部字段、或者部分字段的。对比一下这两种方式：<br>全部字段：通用性好，代码维护方便，占用空间大。<br>部分字段：占用空间小，通用性相对较差。</p>
+<h5 id="缓存穿透问题"><a href="#缓存穿透问题" class="headerlink" title="缓存穿透问题"></a>缓存穿透问题</h5><p>正常的流程是先查缓存，缓存中取不到，就查询数据库，然后把数据放进缓存，设置过期时间。<br>而缓存穿透指的是大量请求查询一个数据库不存在的对象，每次从缓存取数据的时候，取不到就会一直去数据库查询。比如根据某个id查询数据，这个id的数据在数据库中根本就不存在，就会出现这种问题。<br>出现原因：</p>
+<ul>
+<li>业务代码问题。</li>
+<li>恶意攻击或者网络爬虫。</li>
+</ul>
+<p>解决方案一：  缓存空对象，当缓存和数据库都取不到数据时，写一个空对象到缓存，设置较短的过期时间。<br>缺点：</p>
+<ul>
+<li>需要更多的Key。</li>
+<li>缓存层和数据层数据“短期”不一致。</li>
+</ul>
+<p>解决方案二： 布隆过滤器拦截（推荐）。<br>缺点：需要另外维护一个集合来存放缓存的Key</p>
+<h5 id="缓存雪崩问题"><a href="#缓存雪崩问题" class="headerlink" title="缓存雪崩问题"></a>缓存雪崩问题</h5><p>缓存在同一时间内大量键过期（失效），接着来的大量请求瞬间都落在了数据库中导致数据库连接异常。<br>解决方案：</p>
+<ul>
+<li>不同维度数据设置不同的过期时间（随机因子），防止同一时间大量数据过期现象发生。</li>
+<li>设置热点数据永不过期。</li>
+</ul>
+<h5 id="缓存击穿问题"><a href="#缓存击穿问题" class="headerlink" title="缓存击穿问题"></a>缓存击穿问题</h5><p> 缓存击穿是指缓存中没有但数据库中有的数据（一般是缓存时间到期），如果此时请求量并发量过大，同时读缓存没读到数据，又同时去数据库去取数据，引起数据库压力瞬间增大，造成过大压力。<br>解决方案：</p>
+<ul>
+<li>设置热点数据永不过期</li>
+<li>加互斥锁，当数据库正在查询时，加锁，数据存入缓存后，释放锁。</li>
+</ul>
+<h5 id="无底洞问题"><a href="#无底洞问题" class="headerlink" title="无底洞问题"></a>无底洞问题</h5><p>2010年,facebook有了3000个memcache节点 ，发现问题，“加”机器性能没能提升，反而下降，更多的机器不等于更高的性能。<br>解决方案：</p>
+<ul>
+<li>优化命令:例如慢查询keys丶hgetall bigkey。</li>
+<li>减少网络通信次数</li>
+<li>降低接入成本:例如客户端长连接/连接池丶NIO等</li>
+</ul>
+<p>四种批量优化的方法：<br><img src="https://img-blog.csdnimg.cn/20191205200402825.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>每个问题对应的解决方案都要根据实际场景来定，不能认定一种方案不考虑其他的。</p>
+]]></content>
       <categories>
         <category>Redis</category>
       </categories>
@@ -189,9 +880,22 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[CentOS下Docker搭建ES、Kibana、Cerebro]]></title>
-    <url>%2F2019%2F07%2F19%2FCentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;在Docker容器中运行Elasticsearch, Kibana和Cerebro,快速体验ES生态。 安装Docker CE卸载旧版本docker12345678yum remove docker \ docker-client \ docker-client-latest \ docker-common \ docker-latest \ docker-latest-logrotate \ docker-logrotate \ docker-engine 安装依赖包123yum install -y yum-utils \ device-mapper-persistent-data \ lvm2 设置仓库123yum-config-manager \ --add-repo \ https://download.docker.com/linux/centos/docker-ce.repo 可选项1yum-config-manager --enable docker-ce-nightly 1yum-config-manager --enable docker-ce-test 1yum-config-manager --disable docker-ce-nightly 安装Docker CE1yum install docker-ce docker-ce-cli containerd.io 启动1systemctl start docker 1docker run hello-world 运行ES、Kibana、Cerebro配置创建docker-compose.yaml，内容为123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172version: &apos;2.2&apos;services: cerebro: image: lmenezes/cerebro:0.8.3 container_name: cerebro ports: - &quot;9000:9000&quot; command: - -Dhosts.0.host=http://elasticsearch:9200 networks: - es7net kibana: image: docker.elastic.co/kibana/kibana:7.1.0 container_name: kibana7 environment: - I18N_LOCALE=zh-CN - XPACK_GRAPH_ENABLED=true - TIMELION_ENABLED=true - XPACK_MONITORING_COLLECTION_ENABLED=&quot;true&quot; ports: - &quot;5601:5601&quot; networks: - es7net elasticsearch: image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0 container_name: es7_01 environment: - cluster.name=geektime - node.name=es7_01 - bootstrap.memory_lock=true - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; - discovery.seed_hosts=es7_01 - cluster.initial_master_nodes=es7_01,es7_02 ulimits: memlock: soft: -1 hard: -1 volumes: - es7data1:/usr/share/elasticsearch/data ports: - 9200:9200 networks: - es7net elasticsearch2: image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0 container_name: es7_02 environment: - cluster.name=geektime - node.name=es7_02 - bootstrap.memory_lock=true - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot; - discovery.seed_hosts=es7_01 - cluster.initial_master_nodes=es7_01,es7_02 ulimits: memlock: soft: -1 hard: -1 volumes: - es7data2:/usr/share/elasticsearch/data networks: - es7netvolumes: es7data1: driver: local es7data2: driver: localnetworks: es7net: driver: bridge 启动1docker-compose up 浏览器访问用户名/密码:admin/12345612http://ip:5601http://ip:9200]]></content>
+    <title>CentOS下Docker搭建ES、Kibana、Cerebro</title>
+    <url>/2019/07/19/CentOS%E4%B8%8BDocker%E6%90%AD%E5%BB%BAES%E3%80%81Kibana%E3%80%81Cerebro/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;在Docker容器中运行Elasticsearch, Kibana和Cerebro,快速体验ES生态。</p></div><a id="more"></a> 
+<h4 id="安装Docker-CE"><a href="#安装Docker-CE" class="headerlink" title="安装Docker CE"></a>安装Docker CE</h4><h5 id="卸载旧版本docker"><a href="#卸载旧版本docker" class="headerlink" title="卸载旧版本docker"></a>卸载旧版本docker</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum remove docker \</span><br><span class="line">      docker-client \</span><br><span class="line">      docker-client-latest \</span><br><span class="line">      docker-common \</span><br><span class="line">      docker-latest \</span><br><span class="line">      docker-latest-logrotate \</span><br><span class="line">      docker-logrotate \</span><br><span class="line">      docker-engine</span><br></pre></td></tr></table></figure>
+<h5 id="安装依赖包"><a href="#安装依赖包" class="headerlink" title="安装依赖包"></a>安装依赖包</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install -y yum-utils \</span><br><span class="line">  device-mapper-persistent-data \</span><br><span class="line">  lvm2</span><br></pre></td></tr></table></figure>
+<h5 id="设置仓库"><a href="#设置仓库" class="headerlink" title="设置仓库"></a>设置仓库</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum-config-manager \</span><br><span class="line">    --add-repo \</span><br><span class="line">    https://download.docker.com/linux/centos/docker-ce.repo</span><br></pre></td></tr></table></figure>
+<h5 id="可选项"><a href="#可选项" class="headerlink" title="可选项"></a>可选项</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum-config-manager --enable docker-ce-nightly</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum-config-manager --enable docker-ce-test</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum-config-manager --disable docker-ce-nightly</span><br></pre></td></tr></table></figure>
+<h5 id="安装Docker-CE-1"><a href="#安装Docker-CE-1" class="headerlink" title="安装Docker CE"></a>安装Docker CE</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install docker-ce docker-ce-cli containerd.io</span><br></pre></td></tr></table></figure>
+<h5 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">systemctl start docker</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker run hello-world</span><br></pre></td></tr></table></figure>
+<h4 id="运行ES、Kibana、Cerebro"><a href="#运行ES、Kibana、Cerebro" class="headerlink" title="运行ES、Kibana、Cerebro"></a>运行ES、Kibana、Cerebro</h4><h5 id="配置"><a href="#配置" class="headerlink" title="配置"></a>配置</h5><p>创建docker-compose.yaml，内容为<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">version: &apos;2.2&apos;</span><br><span class="line">services:</span><br><span class="line">  cerebro:</span><br><span class="line">    image: lmenezes/cerebro:0.8.3</span><br><span class="line">    container_name: cerebro</span><br><span class="line">    ports:</span><br><span class="line">      - &quot;9000:9000&quot;</span><br><span class="line">    command:</span><br><span class="line">      - -Dhosts.0.host=http://elasticsearch:9200</span><br><span class="line">    networks:</span><br><span class="line">      - es7net</span><br><span class="line">  kibana:</span><br><span class="line">    image: docker.elastic.co/kibana/kibana:7.1.0</span><br><span class="line">    container_name: kibana7</span><br><span class="line">    environment:</span><br><span class="line">      - I18N_LOCALE=zh-CN</span><br><span class="line">      - XPACK_GRAPH_ENABLED=true</span><br><span class="line">      - TIMELION_ENABLED=true</span><br><span class="line">      - XPACK_MONITORING_COLLECTION_ENABLED=&quot;true&quot;</span><br><span class="line">    ports:</span><br><span class="line">      - &quot;5601:5601&quot;</span><br><span class="line">    networks:</span><br><span class="line">      - es7net</span><br><span class="line">  elasticsearch:</span><br><span class="line">    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0</span><br><span class="line">    container_name: es7_01</span><br><span class="line">    environment:</span><br><span class="line">      - cluster.name=geektime</span><br><span class="line">      - node.name=es7_01</span><br><span class="line">      - bootstrap.memory_lock=true</span><br><span class="line">      - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot;</span><br><span class="line">      - discovery.seed_hosts=es7_01</span><br><span class="line">      - cluster.initial_master_nodes=es7_01,es7_02</span><br><span class="line">    ulimits:</span><br><span class="line">      memlock:</span><br><span class="line">        soft: -1</span><br><span class="line">        hard: -1</span><br><span class="line">    volumes:</span><br><span class="line">      - es7data1:/usr/share/elasticsearch/data</span><br><span class="line">    ports:</span><br><span class="line">      - 9200:9200</span><br><span class="line">    networks:</span><br><span class="line">      - es7net</span><br><span class="line">  elasticsearch2:</span><br><span class="line">    image: docker.elastic.co/elasticsearch/elasticsearch:7.1.0</span><br><span class="line">    container_name: es7_02</span><br><span class="line">    environment:</span><br><span class="line">      - cluster.name=geektime</span><br><span class="line">      - node.name=es7_02</span><br><span class="line">      - bootstrap.memory_lock=true</span><br><span class="line">      - &quot;ES_JAVA_OPTS=-Xms512m -Xmx512m&quot;</span><br><span class="line">      - discovery.seed_hosts=es7_01</span><br><span class="line">      - cluster.initial_master_nodes=es7_01,es7_02</span><br><span class="line">    ulimits:</span><br><span class="line">      memlock:</span><br><span class="line">        soft: -1</span><br><span class="line">        hard: -1</span><br><span class="line">    volumes:</span><br><span class="line">      - es7data2:/usr/share/elasticsearch/data</span><br><span class="line">    networks:</span><br><span class="line">      - es7net</span><br><span class="line"></span><br><span class="line"></span><br><span class="line">volumes:</span><br><span class="line">  es7data1:</span><br><span class="line">    driver: local</span><br><span class="line">  es7data2:</span><br><span class="line">    driver: local</span><br><span class="line"></span><br><span class="line">networks:</span><br><span class="line">  es7net:</span><br><span class="line">    driver: bridge</span><br></pre></td></tr></table></figure></p>
+<h5 id="启动-1"><a href="#启动-1" class="headerlink" title="启动"></a>启动</h5><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">docker-compose up</span><br></pre></td></tr></table></figure>
+<p>浏览器访问<br>用户名/密码:admin/123456<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">http://ip:5601</span><br><span class="line">http://ip:9200</span><br></pre></td></tr></table></figure></p>
+]]></content>
       <categories>
         <category>Elastic Stack</category>
       </categories>
@@ -200,9 +904,210 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[数据库设计规范-MySQL5.7]]></title>
-    <url>%2F2019%2F07%2F16%2F%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83-MySQL5-7%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;数据库设计规范-MySQL5.7,参考。 整理自慕课网《高性能可扩展MySQL数据库设计及架构优化 电商项目》 总览 数据库命名规范 数据库基本设计规范 数据库索引设计规范 数据库字段设计规范 SQL开发规范 数据库操作规范 数据库命名规范 所有数据库对象名称必须使用小写字母并用下划线分割 所有数据库对象名称禁止使用mysql保留关键字 数据库对象的命名要能做到见名知义，并且最好不要超过32个字符 所有的临时表必须以 tmp 为前缀并以日期为后缀 | 备份库必须以bak为前缀并以日期为后缀 所有存储相同数据的列名和列类型必须一致 数据库基本设计规范 所有表必须使用Innodb存储引擎。5.6 以后的默认引擎支持事务，行级锁，更好的恢复性，高并发下性能最好 数据库和表字符集统一使用UTF8,一个汉字占用3个字节（ UTF-8 ） 所有的表个字段都需要添加注释 尽量控制单表数据量的大小，建议控制在500万以内 谨慎使用MySQL分区表 分区表在物理上表现为多个文件，在逻辑上表现为一个表 谨慎选择分区表，跨分区查询效率可能更低,建议采用物理分表的方式管理大数据。 尽量做到冷热数据分离，减小表的宽度 减少磁盘IO，保证热数据的内存缓存命中 利用更有效的缓存，避免读入无用的冷数据 经常使用的列放在一个表。 禁止在表中建立预留字段 禁止字数据库中存储图片，文件等二进制数据（要存的话使用BLOB类型） 禁止在线上做数据库压力测试 禁止从开发环境，测试环境直接连生产数据库环境（环境隔离） 数据库索引设计规范 限制每张表的索引数量，建议单张表索引不超过5个 索引不是越多越好，索引可以提高效率同时也可以降低效率 索引可以增加查询效率，但同样也会降低插入和更新效率 禁止给表中的每一列都建立单独的索引 每个Innodb表必须有一个主键 不使用更新频繁的列作为主键，不使用多列主键 不使用UUID，MD5，HASH，字符串作为主键 主键建议使用自增ID 常见索引列建议 select，update，delete从句的where从句中的列 包含order by，group by， distinct中的字段 多表 join 的关联列 如何选择索引列的顺序 区分度最高的列放在联合索引的最左侧 尽量把字段长度最小的列放在联合索引的最左侧 使用最频繁的列放在联合索引的左侧 避免建立冗余索引和重复索引 对应频繁的查询优先考虑使用覆盖索引 尽量避免使用外键约束 不建议使用外键约束，但一定在表与表之间的关联键上建立索引 外键建议在业务端实现 外键会影响父表和子表的写操作从而降低性能 数据库字段设计规范 优先选择符合存储需要的最小的数据类型 将字符串转换为数字类型存储 123-- ip 使用数字存储INET_ATON(&apos;255.255.255.255&apos;) = 4294967295 -- 将ip字符串转为数字INET_NTOA(4294967295) = &apos;255.255.255.255&apos; -- 将数字转为ip字符串 对于非负型的数据来说，要优先使用无符号整形来存储 避免使用TEXT、BLOB数据类型 建议把BLOB，TEXT列分离到单独的扩展表中 TEXT，BLOB类型只能使用前缀索引 避免使用ENUM类型 内部使用整数存储 修改ENUM值需要使用ALTER语句,修改元数据会有元数据锁 ENUM类型的ORDER BY操作效率低，需要额外的操作 禁止使用数值作为枚举值 尽可能把所有列定义为NOT NULL 索引NULL列需要额外的空间来保存，所以会占用更多空间 进行比较和计算时会对NULL值做特别的处理 使用TIMESTAMP或DATETIME类型存储时间 同财务相关的金额类数据，必须使用decimal类型 decimal占用的空间由定义的宽度决定 可用于存储比bigint更大的整数数据 SQL开发规范 建议使用预编译语句进行数据库操作 避免数据类型的隐式转换（索引会失效） 充分利用表上已经存在的索引 避免使用双%的查询条件 a like ‘%123%’ 一个SQL只能利用到复合索引中的一列进行范围查询 使用left join或 not exists 来优化 not in 操作 程序连接不同的数据库使用不同的账号，禁止跨库查询 禁止使用 SELECT * 查询 消耗更多的CPU和IO以及网络带宽资源 无法覆盖到索引 禁止使用不含字段列表的INSERT语句 避免使用子查询，可以把子查询优化为join操作 子查询结果集无法使用索引 子查询会产生临时表，如果子查询数据量大则严重影响效率 消耗过多的CPU和IO资源 避免使用join关联太多的表 每join一个表会多占一部分内存（join_buffer_size） 会产生临时表操作，影响查询效率 MYSQL最多允许关联61个表，建议不超过5个 减少同数据库的交互次数 数据库更适合处理批量操作 合并多个相同操作的操作到一起，可以提高处理效率 禁止使用order by rand() 进行随机排序 会把表中所有符合条件呢的数据装入内存中进行排序 会消耗大量的CPU以及IO资源 禁止在where从句中对列进行函数转换和计算 在明显不会有重复值时使用UNION ALL 而不是 UNION UNION会把所有数据放到临时表中后再进行去重操作 UNION ALL不会再对结果集进行去重操作 拆分复杂的大SQL为多个小SQL MYSQL一个SQL只能使用一个CPU进行计算 SQL拆分后可以通过并行执行来提高处理效率 数据库操作规范 超过100万行的批量操作，要分批多次进行操作 对于大表使用pt-online-schema-change工具修改表结构 禁止为程序使用的账号赋予super权限 对于程序连接数据库的账号，遵循权限最小原则，例如:应用程序使用的帐号不应该具有drop权限]]></content>
+    <title>数据库设计规范-MySQL5.7</title>
+    <url>/2019/07/16/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%AE%BE%E8%AE%A1%E8%A7%84%E8%8C%83-MySQL5-7/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;数据库设计规范-MySQL5.7,参考。</p></div><a id="more"></a> 
+<blockquote>
+<p>整理自慕课网《高性能可扩展MySQL数据库设计及架构优化 电商项目》</p>
+</blockquote>
+<h4 id="总览"><a href="#总览" class="headerlink" title="总览"></a>总览</h4><ul>
+<li>数据库命名规范</li>
+<li>数据库基本设计规范</li>
+<li>数据库索引设计规范</li>
+<li>数据库字段设计规范</li>
+<li>SQL开发规范</li>
+<li>数据库操作规范</li>
+</ul>
+<h4 id="数据库命名规范"><a href="#数据库命名规范" class="headerlink" title="数据库命名规范"></a>数据库命名规范</h4><ul>
+<li>所有数据库对象名称必须使用小写字母并用下划线分割</li>
+<li>所有数据库对象名称禁止使用mysql保留关键字</li>
+<li>数据库对象的命名要能做到见名知义，并且最好不要超过32个字符</li>
+<li>所有的临时表必须以 tmp 为前缀并以日期为后缀 | 备份库必须以bak为前缀并以日期为后缀</li>
+<li>所有存储相同数据的列名和列类型必须一致</li>
+</ul>
+<h4 id="数据库基本设计规范"><a href="#数据库基本设计规范" class="headerlink" title="数据库基本设计规范"></a>数据库基本设计规范</h4><ul>
+<li>所有表必须使用Innodb存储引擎。5.6 以后的默认引擎支持事务，行级锁，更好的恢复性，高并发下性能最好</li>
+<li>数据库和表字符集统一使用UTF8,一个汉字占用3个字节（ UTF-8 ）</li>
+<li>所有的表个字段都需要添加注释</li>
+<li>尽量控制单表数据量的大小，建议控制在500万以内</li>
+<li>谨慎使用MySQL分区表<blockquote>
+<ul>
+<li>分区表在物理上表现为多个文件，在逻辑上表现为一个表</li>
+<li>谨慎选择分区表，跨分区查询效率可能更低,建议采用物理分表的方式管理大数据。</li>
+</ul>
+</blockquote>
+</li>
+<li>尽量做到冷热数据分离，减小表的宽度<blockquote>
+<ul>
+<li>减少磁盘IO，保证热数据的内存缓存命中</li>
+<li>利用更有效的缓存，避免读入无用的冷数据</li>
+<li>经常使用的列放在一个表。</li>
+</ul>
+</blockquote>
+</li>
+<li>禁止在表中建立预留字段</li>
+<li>禁止字数据库中存储图片，文件等二进制数据（要存的话使用BLOB类型）</li>
+<li>禁止在线上做数据库压力测试</li>
+<li>禁止从开发环境，测试环境直接连生产数据库环境（环境隔离）</li>
+</ul>
+<h4 id="数据库索引设计规范"><a href="#数据库索引设计规范" class="headerlink" title="数据库索引设计规范"></a>数据库索引设计规范</h4><ul>
+<li>限制每张表的索引数量，建议单张表索引不超过5个<blockquote>
+<ul>
+<li>索引不是越多越好，索引可以提高效率同时也可以降低效率</li>
+<li>索引可以增加查询效率，但同样也会降低插入和更新效率</li>
+<li>禁止给表中的每一列都建立单独的索引</li>
+</ul>
+</blockquote>
+</li>
+<li>每个Innodb表必须有一个主键<blockquote>
+<ul>
+<li>不使用更新频繁的列作为主键，不使用多列主键</li>
+<li>不使用UUID，MD5，HASH，字符串作为主键</li>
+<li>主键建议使用自增ID</li>
+</ul>
+</blockquote>
+</li>
+<li>常见索引列建议<blockquote>
+<ul>
+<li>select，update，delete从句的where从句中的列</li>
+<li>包含order by，group by， distinct中的字段</li>
+<li>多表 join 的关联列</li>
+</ul>
+</blockquote>
+</li>
+<li>如何选择索引列的顺序<blockquote>
+<ul>
+<li>区分度最高的列放在联合索引的最左侧</li>
+<li>尽量把字段长度最小的列放在联合索引的最左侧</li>
+<li>使用最频繁的列放在联合索引的左侧</li>
+</ul>
+</blockquote>
+</li>
+<li>避免建立冗余索引和重复索引</li>
+<li>对应频繁的查询优先考虑使用覆盖索引</li>
+<li>尽量避免使用外键约束<blockquote>
+<ul>
+<li>不建议使用外键约束，但一定在表与表之间的关联键上建立索引</li>
+<li>外键建议在业务端实现</li>
+<li>外键会影响父表和子表的写操作从而降低性能</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h4 id="数据库字段设计规范"><a href="#数据库字段设计规范" class="headerlink" title="数据库字段设计规范"></a>数据库字段设计规范</h4><ul>
+<li><p>优先选择符合存储需要的最小的数据类型</p>
+<blockquote>
+<p>将字符串转换为数字类型存储</p>
+  <figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">-- ip 使用数字存储</span><br><span class="line">INET_ATON(&apos;255.255.255.255&apos;) = 4294967295 -- 将ip字符串转为数字</span><br><span class="line">INET_NTOA(4294967295) = &apos;255.255.255.255&apos; -- 将数字转为ip字符串</span><br></pre></td></tr></table></figure>
+</blockquote>
+</li>
+<li><p>对于非负型的数据来说，要优先使用无符号整形来存储</p>
+</li>
+<li>避免使用TEXT、BLOB数据类型<blockquote>
+<ul>
+<li>建议把BLOB，TEXT列分离到单独的扩展表中</li>
+<li>TEXT，BLOB类型只能使用前缀索引</li>
+</ul>
+</blockquote>
+</li>
+<li>避免使用ENUM类型<blockquote>
+<ul>
+<li>内部使用整数存储</li>
+<li>修改ENUM值需要使用ALTER语句,修改元数据会有元数据锁</li>
+<li>ENUM类型的ORDER BY操作效率低，需要额外的操作</li>
+<li>禁止使用数值作为枚举值</li>
+</ul>
+</blockquote>
+</li>
+<li>尽可能把所有列定义为NOT NULL<blockquote>
+<ul>
+<li>索引NULL列需要额外的空间来保存，所以会占用更多空间</li>
+<li>进行比较和计算时会对NULL值做特别的处理</li>
+</ul>
+</blockquote>
+</li>
+<li>使用TIMESTAMP或DATETIME类型存储时间</li>
+<li>同财务相关的金额类数据，必须使用decimal类型<blockquote>
+<ul>
+<li>decimal占用的空间由定义的宽度决定</li>
+<li>可用于存储比bigint更大的整数数据</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h4 id="SQL开发规范"><a href="#SQL开发规范" class="headerlink" title="SQL开发规范"></a>SQL开发规范</h4><ul>
+<li>建议使用预编译语句进行数据库操作</li>
+<li>避免数据类型的隐式转换（索引会失效）</li>
+<li>充分利用表上已经存在的索引<blockquote>
+<ul>
+<li>避免使用双%的查询条件 a like ‘%123%’</li>
+<li>一个SQL只能利用到复合索引中的一列进行范围查询</li>
+<li>使用left join或 not exists 来优化 not in 操作</li>
+</ul>
+</blockquote>
+</li>
+<li>程序连接不同的数据库使用不同的账号，禁止跨库查询</li>
+<li>禁止使用 SELECT * 查询<blockquote>
+<ul>
+<li>消耗更多的CPU和IO以及网络带宽资源</li>
+<li>无法覆盖到索引</li>
+</ul>
+</blockquote>
+</li>
+<li>禁止使用不含字段列表的INSERT语句</li>
+<li>避免使用子查询，可以把子查询优化为join操作<blockquote>
+<ul>
+<li>子查询结果集无法使用索引</li>
+<li>子查询会产生临时表，如果子查询数据量大则严重影响效率</li>
+<li>消耗过多的CPU和IO资源</li>
+</ul>
+</blockquote>
+</li>
+<li>避免使用join关联太多的表<blockquote>
+<ul>
+<li>每join一个表会多占一部分内存（join_buffer_size）</li>
+<li>会产生临时表操作，影响查询效率</li>
+<li>MYSQL最多允许关联61个表，建议不超过5个</li>
+</ul>
+</blockquote>
+</li>
+<li>减少同数据库的交互次数<blockquote>
+<ul>
+<li>数据库更适合处理批量操作</li>
+<li>合并多个相同操作的操作到一起，可以提高处理效率</li>
+</ul>
+</blockquote>
+</li>
+<li>禁止使用order by rand() 进行随机排序<blockquote>
+<ul>
+<li>会把表中所有符合条件呢的数据装入内存中进行排序</li>
+<li>会消耗大量的CPU以及IO资源</li>
+</ul>
+</blockquote>
+</li>
+<li>禁止在where从句中对列进行函数转换和计算</li>
+<li>在明显不会有重复值时使用UNION ALL 而不是 UNION<blockquote>
+<ul>
+<li>UNION会把所有数据放到临时表中后再进行去重操作</li>
+<li>UNION ALL不会再对结果集进行去重操作</li>
+</ul>
+</blockquote>
+</li>
+<li>拆分复杂的大SQL为多个小SQL<blockquote>
+<ul>
+<li>MYSQL一个SQL只能使用一个CPU进行计算</li>
+<li>SQL拆分后可以通过并行执行来提高处理效率</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h4 id="数据库操作规范"><a href="#数据库操作规范" class="headerlink" title="数据库操作规范"></a>数据库操作规范</h4><ul>
+<li>超过100万行的批量操作，要分批多次进行操作</li>
+<li>对于大表使用pt-online-schema-change工具修改表结构</li>
+<li>禁止为程序使用的账号赋予super权限</li>
+<li>对于程序连接数据库的账号，遵循权限最小原则，例如:应用程序使用的帐号不应该具有drop权限</li>
+</ul>
+]]></content>
       <categories>
         <category>数据库</category>
       </categories>
@@ -211,17 +1116,59 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Redis数据持久化的两种方式]]></title>
-    <url>%2F2019%2F07%2F10%2FRedis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;Redis数据持久化的两种方式。 为什么要做redis持久化对于一个企业级的redis架构来说，持久化是必不可少的。持久化的作用主要体现在灾难恢复，数据恢复。 比如redis故障了，我们需要让redis尽快重启并正常提供服务。但是如果没有做数据持久化，就算重启也没有数据可用，如果这时候收到大量的请求，缓存全部无法命中，在redis里找不到数据，大量的请求直接请求到数据库，数据库很有可能承受不了挂掉，如果数据库挂掉，数据无法恢复到redis里，将导致服务不可用。 如果能够做好redis的持久化，备份和恢复方案做到企业级的程度，那么即使redis故障了，也可以通过备份数据，快速恢复数据，一旦恢复立即就能对外提供服务。 redis持久化的两种方式持久化就是把当前Redis数据库中的内存数据保存到硬盘的过程。当然我们也可以将这些数据备份到云服务上去。如果redis挂了，服务器上的内存和磁盘上的数据都丢了，可以从云服务上拷贝回来之前的数据，放到指定的目录中，然后重新启动redis，redis就会自动根据持久化数据文件中的数据，去恢复内存中的数据，继续对外提供服务。 如果我们想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。redis为我们提供了两种持久化方式：RDB(Redis DataBase)和AOF(Append Only File)。 RDBRDB持久化机制，是对redis中的数据执行周期性的持久化。每隔一段指定时间会生成数据快照到磁盘。RDB方式有以下优点： RDB会生成多个数据文件，每个数据文件都代表了某一个时刻中redis的数据，这种多个数据文件的方式，非常适合做冷备，可以将这种完整的数据文件发送到一些远程的安全存储上去，比如说Amazon的S3云服务上去，在国内可以是阿里云的ODPS分布式存储上，以预定好的备份策略来定期备份redis中的数据。 RDB对redis提供的读写服务，影响非常小，可以让redis保持高性能，因为redis主进程只需要fork一个子进程，让子进程执行磁盘IO操作来进行RDB持久化即可。 相对于AOF持久化机制来说，直接基于RDB数据文件来重启和恢复redis进程，更加快速。结合上述优点，RDB特别适合做冷备份。因为AOF存放的指令日志，做数据恢复的时候，是要回放和执行所有的指令日志，来恢复出来内存中的所有数据的。而RDB就是一份数据文件，恢复的时候，直接加载到内存中即可。 RDB方式有以下缺点： 如果想要redis故障时，尽可能少的丢失数据，那么AOF方法比较合适。一般来说，RDB数据快照文件，都是每隔5分钟，或者更长时间生成一次，这个时候就得接受一旦redis进程宕机，那么会丢失最近5分钟的数据。这个也是RDB最大的缺点，不适合做第一优先的恢复方案，如果依赖RDB做第一优先恢复方案，可能会导致数据丢失较多。 RDB每次fork子进程来执行RDB快照数据文件生成的时候，如果数据文件特别大，可能会导致对客户端提供的服务暂停数毫秒，或者甚至数秒。一般不要让RDB生成快照的的间隔太长，否则每次生成的RDB文件太大了，对redis本身的性能会有影响。 AOFAOF机制是将每条写入命令作为日志，以append-only的模式写入一个日志文件中，在redis重启的时候，可以通过回放AOF日志中的写入指令来重新构建整个数据集。AOF方式的优点： AOF可以更好的保护数据不丢失，一般AOF会每隔1秒，通过一个后台线程执行一次fsync操作，保证os cache中的数据写入磁盘中，如果redis进程挂了，最多丢掉1秒钟的数据。 AOF日志文件以append-only模式写入，所以没有任何磁盘寻址的开销，写入性能非常高，而且文件不容易破损，即使文件尾部破损，也很容易修复。 AOF日志文件即使过大的时候，出现后台重写操作，也不会影响客户端的读写。因为在rewrite log的时候，会对其中的指令进行压缩，创建出一份需要恢复数据的最小日志出来。在创建新日志文件的时候，老的日志文件还是照常写入。当新的merge后的日志文件ready的时候，再交换新老日志文件即可。 AOF日志文件的命令通过非常可读的方式进行记录，这个特性非常适合做灾难性的误删除的紧急恢复。比如某人不小心用flushall命令清空了所有数据，只要这个时候后台rewrite还没有发生，那么就可以立即拷贝AOF文件，将最后一条flushall命令给删了，然后再将该AOF文件放回去，就可以通过恢复机制，自动恢复所有数据。 AOF方式的缺点： 对于同一份数据来说，AOF日志文件通常比RDB数据快照文件更大。 AOF开启后，支持的写QPS会比RDB支持的写QPS低，因为AOF一般会配置成每秒fsync一次日志文件，当然，每秒一次fsync，性能也还是很高的。如果你想保证一条数据都不丢，可以将AOF的fsync设置成每写入一条数据，fsync一次，但这样会导致redis的QPS大大降低。 AOF曾经发生过bug，通过AOF记录的日志，进行数据恢复的时候，没有恢复出一模一样的数据出来。所以说，类似AOF这种较为复杂的基于命令日志/merge/回放的方式，比基于RDB每次持久化一份完整的数据快照文件的方式，更加脆弱一些，容易有bug。不过AOF就是为了避免rewrite过程导致的bug，因此每次rewrite并不是基于旧的指令日志进行merge的，而是基于当时内存中的数据进行指令的重新构建，这样健壮性会好很多。 唯一的比较大的缺点，其实就是做数据恢复的时候，会比较慢，还有做冷备、定期的备份，不太方便，可能要自己手写复杂的脚本去做，做冷备不太合适。 RDB和AOF到底该如何选择 不要仅使用RDB，因为那样会导致你丢失很多数据。 也不要仅仅使用AOF，因为那样有两个问题。第一，通过AOF做冷备没有RDB做冷备恢复速度快; 第二，RDB每次简单粗暴生成数据快照，更加健壮，可以避免AOF这种复杂的备份和恢复机制的bug。 综合使用AOF和RDB两种持久化机制，用AOF来保证数据不丢失，作为数据恢复的第一选择; 用RDB来做不同程度的冷备，在AOF文件都丢失或损坏不可用的时候，还可以使用RDB来进行快速的数据恢复。]]></content>
+    <title>Redis数据持久化的两种方式</title>
+    <url>/2019/07/10/Redis%E6%95%B0%E6%8D%AE%E6%8C%81%E4%B9%85%E5%8C%96%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E5%BC%8F/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;Redis数据持久化的两种方式。</p></div><a id="more"></a> 
+<h5 id="为什么要做redis持久化"><a href="#为什么要做redis持久化" class="headerlink" title="为什么要做redis持久化"></a>为什么要做redis持久化</h5><p>对于一个企业级的redis架构来说，持久化是必不可少的。持久化的作用主要体现在灾难恢复，数据恢复。</p>
+<p>比如redis故障了，我们需要让redis尽快重启并正常提供服务。但是如果没有做数据持久化，就算重启也没有数据可用，如果这时候收到大量的请求，缓存全部无法命中，在redis里找不到数据，大量的请求直接请求到数据库，数据库很有可能承受不了挂掉，如果数据库挂掉，数据无法恢复到redis里，将导致服务不可用。</p>
+<p>如果能够做好redis的持久化，备份和恢复方案做到企业级的程度，那么即使redis故障了，也可以通过备份数据，快速恢复数据，一旦恢复立即就能对外提供服务。</p>
+<h5 id="redis持久化的两种方式"><a href="#redis持久化的两种方式" class="headerlink" title="redis持久化的两种方式"></a>redis持久化的两种方式</h5><p>持久化就是把当前Redis数据库中的内存数据保存到硬盘的过程。当然我们也可以将这些数据备份到云服务上去。如果redis挂了，服务器上的内存和磁盘上的数据都丢了，可以从云服务上拷贝回来之前的数据，放到指定的目录中，然后重新启动redis，redis就会自动根据持久化数据文件中的数据，去恢复内存中的数据，继续对外提供服务。</p>
+<p>如果我们想要redis仅仅作为纯内存的缓存来用，那么可以禁止RDB和AOF所有的持久化机制。redis为我们提供了两种持久化方式：RDB(Redis DataBase)和AOF(Append Only File)。</p>
+<h6 id="RDB"><a href="#RDB" class="headerlink" title="RDB"></a>RDB</h6><p>RDB持久化机制，是对redis中的数据执行周期性的持久化。每隔一段指定时间会生成数据快照到磁盘。<br><strong>RDB方式有以下优点：</strong></p>
+<ul>
+<li>RDB会生成多个数据文件，每个数据文件都代表了某一个时刻中redis的数据，这种多个数据文件的方式，非常适合做冷备，可以将这种完整的数据文件发送到一些远程的安全存储上去，比如说Amazon的S3云服务上去，在国内可以是阿里云的ODPS分布式存储上，以预定好的备份策略来定期备份redis中的数据。</li>
+<li>RDB对redis提供的读写服务，影响非常小，可以让redis保持高性能，因为redis主进程只需要fork一个子进程，让子进程执行磁盘IO操作来进行RDB持久化即可。</li>
+<li>相对于AOF持久化机制来说，直接基于RDB数据文件来重启和恢复redis进程，更加快速。<br>结合上述优点，RDB特别适合做冷备份。因为AOF存放的指令日志，做数据恢复的时候，是要回放和执行所有的指令日志，来恢复出来内存中的所有数据的。<br>而RDB就是一份数据文件，恢复的时候，直接加载到内存中即可。</li>
+</ul>
+<p><strong>RDB方式有以下缺点：</strong></p>
+<ul>
+<li>如果想要redis故障时，尽可能少的丢失数据，那么AOF方法比较合适。一般来说，RDB数据快照文件，都是每隔5分钟，或者更长时间生成一次，这个时候就得接受一旦redis进程宕机，那么会丢失最近5分钟的数据。这个也是RDB最大的缺点，不适合做第一优先的恢复方案，如果依赖RDB做第一优先恢复方案，可能会导致数据丢失较多。</li>
+<li>RDB每次fork子进程来执行RDB快照数据文件生成的时候，如果数据文件特别大，可能会导致对客户端提供的服务暂停数毫秒，或者甚至数秒。一般不要让RDB生成快照的的间隔太长，否则每次生成的RDB文件太大了，对redis本身的性能会有影响。</li>
+</ul>
+<h6 id="AOF"><a href="#AOF" class="headerlink" title="AOF"></a>AOF</h6><p>AOF机制是将每条写入命令作为日志，以append-only的模式写入一个日志文件中，在redis重启的时候，可以通过回放AOF日志中的写入指令来重新构建整个数据集。<br><strong>AOF方式的优点：</strong></p>
+<ul>
+<li>AOF可以更好的保护数据不丢失，一般AOF会每隔1秒，通过一个后台线程执行一次fsync操作，保证os cache中的数据写入磁盘中，如果redis进程挂了，最多丢掉1秒钟的数据。</li>
+<li>AOF日志文件以append-only模式写入，所以没有任何磁盘寻址的开销，写入性能非常高，而且文件不容易破损，即使文件尾部破损，也很容易修复。</li>
+<li>AOF日志文件即使过大的时候，出现后台重写操作，也不会影响客户端的读写。因为在rewrite log的时候，会对其中的指令进行压缩，创建出一份需要恢复数据的最小日志出来。在创建新日志文件的时候，老的日志文件还是照常写入。当新的merge后的日志文件ready的时候，再交换新老日志文件即可。</li>
+<li>AOF日志文件的命令通过非常可读的方式进行记录，这个特性非常适合做灾难性的误删除的紧急恢复。比如某人不小心用flushall命令清空了所有数据，只要这个时候后台rewrite还没有发生，那么就可以立即拷贝AOF文件，将最后一条flushall命令给删了，然后再将该AOF文件放回去，就可以通过恢复机制，自动恢复所有数据。</li>
+</ul>
+<p><strong>AOF方式的缺点：</strong></p>
+<ul>
+<li>对于同一份数据来说，AOF日志文件通常比RDB数据快照文件更大。</li>
+<li>AOF开启后，支持的写QPS会比RDB支持的写QPS低，因为AOF一般会配置成每秒fsync一次日志文件，当然，每秒一次fsync，性能也还是很高的。如果你想保证一条数据都不丢，可以将AOF的fsync设置成每写入一条数据，fsync一次，但这样会导致redis的QPS大大降低。</li>
+<li>AOF曾经发生过bug，通过AOF记录的日志，进行数据恢复的时候，没有恢复出一模一样的数据出来。所以说，类似AOF这种较为复杂的基于命令日志/merge/回放的方式，比基于RDB每次持久化一份完整的数据快照文件的方式，更加脆弱一些，容易有bug。不过AOF就是为了避免rewrite过程导致的bug，因此每次rewrite并不是基于旧的指令日志进行merge的，而是基于当时内存中的数据进行指令的重新构建，这样健壮性会好很多。</li>
+<li>唯一的比较大的缺点，其实就是做数据恢复的时候，会比较慢，还有做冷备、定期的备份，不太方便，可能要自己手写复杂的脚本去做，做冷备不太合适。</li>
+</ul>
+<p><strong>RDB和AOF到底该如何选择</strong></p>
+<ul>
+<li>不要仅使用RDB，因为那样会导致你丢失很多数据。</li>
+<li>也不要仅仅使用AOF，因为那样有两个问题。第一，通过AOF做冷备没有RDB做冷备恢复速度快; 第二，RDB每次简单粗暴生成数据快照，更加健壮，可以避免AOF这种复杂的备份和恢复机制的bug。</li>
+<li>综合使用AOF和RDB两种持久化机制，用AOF来保证数据不丢失，作为数据恢复的第一选择; 用RDB来做不同程度的冷备，在AOF文件都丢失或损坏不可用的时候，还可以使用RDB来进行快速的数据恢复。</li>
+</ul>
+]]></content>
       <categories>
         <category>Redis</category>
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[小程序解决canvas真机层级太高问题]]></title>
-    <url>%2F2018%2F09%2F05%2F%E5%B0%8F%E7%A8%8B%E5%BA%8F%E8%A7%A3%E5%86%B3canvas%E7%9C%9F%E6%9C%BA%E5%B1%82%E7%BA%A7%E5%A4%AA%E9%AB%98%E9%97%AE%E9%A2%98%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;微信小程序解决canvas真机层级太高问题。 1、将canvas移出屏幕外面,比如设置1left:1000px; 2、将canvas转换成图片 1234567891011canvasToTempImage: function(id) &#123; wx.canvasToTempFilePath(&#123; canvasId: id, success: (res) =&gt; &#123; let tempFilePath = res.tempFilePath this.setData(&#123; progressImageBg: tempFilePath &#125;) &#125; &#125;, this); &#125;, 3、页面里用image代替canvas，路径为canvas转换成的临时文件路径。]]></content>
+    <title>小程序解决canvas真机层级太高问题</title>
+    <url>/2018/09/05/%E5%B0%8F%E7%A8%8B%E5%BA%8F%E8%A7%A3%E5%86%B3canvas%E7%9C%9F%E6%9C%BA%E5%B1%82%E7%BA%A7%E5%A4%AA%E9%AB%98%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;微信小程序解决canvas真机层级太高问题。</p></div><a id="more"></a> 
+<p>1、将canvas移出屏幕外面,比如设置<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">left:1000px;</span><br></pre></td></tr></table></figure></p>
+<p>2、将canvas转换成图片</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">canvasToTempImage: function(id) &#123;</span><br><span class="line">   wx.canvasToTempFilePath(&#123;</span><br><span class="line">     canvasId: id,</span><br><span class="line">     success: (res) =&gt; &#123;</span><br><span class="line">       let tempFilePath = res.tempFilePath</span><br><span class="line">       this.setData(&#123;</span><br><span class="line">           progressImageBg: tempFilePath</span><br><span class="line">         &#125;)</span><br><span class="line">     &#125;</span><br><span class="line">   &#125;, this);</span><br><span class="line"> &#125;,</span><br></pre></td></tr></table></figure>
+<p>3、页面里用image代替canvas，路径为canvas转换成的临时文件路径。</p>
+]]></content>
       <categories>
         <category>前端</category>
       </categories>
@@ -230,17 +1177,39 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[Nginx的几种用途]]></title>
-    <url>%2F2018%2F08%2F05%2FNginx%E7%9A%84%E5%87%A0%E7%A7%8D%E7%94%A8%E9%80%94%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;Nginx常见的几种用途。 静态文件服务器修改nginx.conf12345678910111213141516server &#123; listen 80; server_name localhost; #charset koi8-r; #access_log logs/host.access.log main; location / &#123; #配置静态文件目录 root /root/app/; #配置首页 index index.html index.htm; #autoindex在浏览器显示文件目录 autoindex off; #限制访问速度 set $limit_rate 100k; &#125; &#125; 如果访问出现Nginx 403 Forbidden在nginx.conf头部添加：1user root; 开启gzip在http指令块下添加123456gzip on;gzip_min_length 100;gzip_comp_level 1;gzip_buffers 4 8k;gzip_types text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php image/jpeg img/gif image/png; 反向代理根据路径后缀配置反向代理到tomcat，启动一台tomcat，请求地址 http://localhost/cat1。修改nginx.conf，在serer指令块下添加：123location /cat1 &#123; proxy_pass http://localhost:8081/;&#125; 配置成功后，cat1后缀的链接都会被代理到Nginx服务器的8081端口上。 负载均衡修改nginx.conf，在http指令块下添加：1234upstream cat &#123; server localhost:8081; server localhost:8082;&#125; server指令块下添加:123location /cat &#123; proxy_pass http://cat/;&#125;]]></content>
+    <title>Nginx的几种用途</title>
+    <url>/2018/08/05/Nginx%E7%9A%84%E5%87%A0%E7%A7%8D%E7%94%A8%E9%80%94/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;Nginx常见的几种用途。</p></div><a id="more"></a> 
+<h5 id="静态文件服务器"><a href="#静态文件服务器" class="headerlink" title="静态文件服务器"></a>静态文件服务器</h5><h6 id="修改nginx-conf"><a href="#修改nginx-conf" class="headerlink" title="修改nginx.conf"></a>修改nginx.conf</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">server &#123;  </span><br><span class="line">  listen 80;  </span><br><span class="line">  server_name localhost;  </span><br><span class="line">  #charset koi8-r;  </span><br><span class="line">  #access_log logs/host.access.log main;  </span><br><span class="line">  location / &#123;  </span><br><span class="line">    #配置静态文件目录 </span><br><span class="line">    root /root/app/;</span><br><span class="line">    #配置首页</span><br><span class="line">    index index.html index.htm;</span><br><span class="line">    #autoindex在浏览器显示文件目录</span><br><span class="line">    autoindex off;</span><br><span class="line">    #限制访问速度</span><br><span class="line">    set $limit_rate 100k;</span><br><span class="line">    &#125;  </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果访问出现Nginx 403 Forbidden<br>在nginx.conf头部添加：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">user root;</span><br></pre></td></tr></table></figure></p>
+<h6 id="开启gzip"><a href="#开启gzip" class="headerlink" title="开启gzip"></a>开启gzip</h6><p>在http指令块下添加<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">gzip on;</span><br><span class="line">gzip_min_length 100;</span><br><span class="line">gzip_comp_level 1;</span><br><span class="line">gzip_buffers 4 8k;</span><br><span class="line">gzip_types text/plain application/x-javascript text/css application/xml text/javascript application/x-httpd-php image/jpeg img/gif image/pn</span><br><span class="line">g;</span><br></pre></td></tr></table></figure></p>
+<h5 id="反向代理"><a href="#反向代理" class="headerlink" title="反向代理"></a>反向代理</h5><p>根据路径后缀配置反向代理到tomcat，启动一台tomcat，请求地址 <a href="http://localhost/cat1。" target="_blank" rel="noopener">http://localhost/cat1。</a><br>修改nginx.conf，在serer指令块下添加：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location /cat1 &#123;</span><br><span class="line">    proxy_pass http://localhost:8081/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>配置成功后，cat1后缀的链接都会被代理到Nginx服务器的8081端口上。</p>
+<h5 id="负载均衡"><a href="#负载均衡" class="headerlink" title="负载均衡"></a>负载均衡</h5><p>修改nginx.conf，在http指令块下添加：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">upstream cat &#123;</span><br><span class="line">    server localhost:8081;</span><br><span class="line">    server localhost:8082;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p>server指令块下添加:<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">location /cat &#123;</span><br><span class="line">    proxy_pass http://cat/;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+]]></content>
       <categories>
         <category>Nginx</category>
       </categories>
   </entry>
   <entry>
-    <title><![CDATA[Nginx安装配置]]></title>
-    <url>%2F2018%2F07%2F05%2FNginx%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;Nginx安装配置。 安装依赖环境1、首先检查GCC是否安装，命令：gcc -v ,如果显示有相关版本信息，则说明已经安装好，没有就安装：1yum install -y gcc 2、PCRE库，Nginx的HTTP模块要用它来解析正则表达式。1yum install -y pcre pcre-devel 3、OpenSSL库1yum install -y openssl openssl-devel 安装下载1wget http://nginx.org/download/nginx-1.14.0.tar.gz 解压安装12345tar -zxvf nginx-1.14.0.tar.gzcd nginx-1.14.0/./configure --prefix=/usr/local/nginxmakemake install 常用命令123456/usr/local/nginx/sbin/nginx #默认启动方式/usr/local/nginx/sbin/nginx -t #测试配置信息/usr/local/nginx/sbin/nginx -v #显示版本信息，-V（大V）显示编译时的参数/usr/local/nginx/sbin/nginx -s stop #快速停止服务/usr/local/nginx/sbin/nginx -s quit #正常停止服务/usr/local/nginx/sbin/nginx -s reload #重启 设置为开机自启动启动脚本123456789101112131415161718192021222324252627282930313233343536373839404142434445464748#! /bin/bash# chkconfig: - 85 15PATH=/usr/local/nginxDESC=&quot;nginx daemon&quot;NAME=nginxDAEMON=$PATH/sbin/$NAMECONFIGFILE=$PATH/conf/$NAME.confPIDFILE=$PATH/logs/$NAME.pidSCRIPTNAME=/etc/init.d/$NAMEset -e[ -x &quot;$DAEMON&quot; ] || exit 0do_start() &#123;$DAEMON -c $CONFIGFILE || echo -n &quot;nginx already running&quot;&#125;do_stop() &#123;$DAEMON -s stop || echo -n &quot;nginx not running&quot;&#125;do_reload() &#123;$DAEMON -s reload || echo -n &quot;nginx can&apos;t reload&quot;&#125;case &quot;$1&quot; instart)echo -n &quot;Starting $DESC: $NAME&quot;do_startecho &quot;.&quot;;;stop)echo -n &quot;Stopping $DESC: $NAME&quot;do_stopecho &quot;.&quot;;;reload|graceful)echo -n &quot;Reloading $DESC configuration...&quot;do_reloadecho &quot;.&quot;;;restart)echo -n &quot;Restarting $DESC: $NAME&quot;do_stopdo_startecho &quot;.&quot;;;*)echo &quot;Usage: $SCRIPTNAME &#123;start|stop|reload|restart&#125;&quot; &gt;&amp;2exit 3;;esacexit 0 设置执行权限1chmod a+x /etc/init.d/nginx 注册成服务并且开机自启12chkconfig --add nginxchkconfig nginx on 命令1service nginx start|stop|reload|restart 配置vim支持nginx.conf语法高亮去解压开的nginx目录，拷贝nginx.vim到vim安装目录下，并且配置vim12cd nginx-1.14.0/cp contrib/vim/syntax/nginx.vim /usr/share/vim/vim74/syntax/ 1vim /usr/share/vim/vim74/filetype.vim 末尾添加以下内容，/usr/local/nginx/conf/*为nginx make install的目录1au BufRead,BufNewFile /usr/local/nginx/conf/* set ft=nginx]]></content>
+    <title>Nginx安装配置</title>
+    <url>/2018/07/05/Nginx%E5%AE%89%E8%A3%85%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;Nginx安装配置。</p></div><a id="more"></a> 
+<h5 id="安装依赖环境"><a href="#安装依赖环境" class="headerlink" title="安装依赖环境"></a>安装依赖环境</h5><p>1、首先检查GCC是否安装，命令：gcc -v ,如果显示有相关版本信息，则说明已经安装好，没有就安装：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install -y gcc</span><br></pre></td></tr></table></figure></p>
+<p>2、PCRE库，Nginx的HTTP模块要用它来解析正则表达式。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install -y pcre pcre-devel</span><br></pre></td></tr></table></figure></p>
+<p>3、OpenSSL库<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install -y openssl openssl-devel</span><br></pre></td></tr></table></figure></p>
+<h5 id="安装"><a href="#安装" class="headerlink" title="安装"></a>安装</h5><h6 id="下载"><a href="#下载" class="headerlink" title="下载"></a>下载</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">wget http://nginx.org/download/nginx-1.14.0.tar.gz</span><br></pre></td></tr></table></figure>
+<h6 id="解压安装"><a href="#解压安装" class="headerlink" title="解压安装"></a>解压安装</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">tar -zxvf nginx-1.14.0.tar.gz</span><br><span class="line">cd nginx-1.14.0/</span><br><span class="line">./configure --prefix=/usr/local/nginx</span><br><span class="line">make</span><br><span class="line">make install</span><br></pre></td></tr></table></figure>
+<h6 id="常用命令"><a href="#常用命令" class="headerlink" title="常用命令"></a>常用命令</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">/usr/local/nginx/sbin/nginx          	    #默认启动方式</span><br><span class="line">/usr/local/nginx/sbin/nginx -t        		#测试配置信息</span><br><span class="line">/usr/local/nginx/sbin/nginx -v        		#显示版本信息，-V（大V）显示编译时的参数</span><br><span class="line">/usr/local/nginx/sbin/nginx -s stop         #快速停止服务</span><br><span class="line">/usr/local/nginx/sbin/nginx -s quit         #正常停止服务</span><br><span class="line">/usr/local/nginx/sbin/nginx -s reload       #重启</span><br></pre></td></tr></table></figure>
+<h5 id="设置为开机自启动"><a href="#设置为开机自启动" class="headerlink" title="设置为开机自启动"></a>设置为开机自启动</h5><h6 id="启动脚本"><a href="#启动脚本" class="headerlink" title="启动脚本"></a>启动脚本</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">#! /bin/bash</span><br><span class="line"># chkconfig: - 85 15</span><br><span class="line">PATH=/usr/local/nginx</span><br><span class="line">DESC=&quot;nginx daemon&quot;</span><br><span class="line">NAME=nginx</span><br><span class="line">DAEMON=$PATH/sbin/$NAME</span><br><span class="line">CONFIGFILE=$PATH/conf/$NAME.conf</span><br><span class="line">PIDFILE=$PATH/logs/$NAME.pid</span><br><span class="line">SCRIPTNAME=/etc/init.d/$NAME</span><br><span class="line">set -e</span><br><span class="line">[ -x &quot;$DAEMON&quot; ] || exit 0</span><br><span class="line">do_start() &#123;</span><br><span class="line">$DAEMON -c $CONFIGFILE || echo -n &quot;nginx already running&quot;</span><br><span class="line">&#125;</span><br><span class="line">do_stop() &#123;</span><br><span class="line">$DAEMON -s stop || echo -n &quot;nginx not running&quot;</span><br><span class="line">&#125;</span><br><span class="line">do_reload() &#123;</span><br><span class="line">$DAEMON -s reload || echo -n &quot;nginx can&apos;t reload&quot;</span><br><span class="line">&#125;</span><br><span class="line">case &quot;$1&quot; in</span><br><span class="line">start)</span><br><span class="line">echo -n &quot;Starting $DESC: $NAME&quot;</span><br><span class="line">do_start</span><br><span class="line">echo &quot;.&quot;</span><br><span class="line">;;</span><br><span class="line">stop)</span><br><span class="line">echo -n &quot;Stopping $DESC: $NAME&quot;</span><br><span class="line">do_stop</span><br><span class="line">echo &quot;.&quot;</span><br><span class="line">;;</span><br><span class="line">reload|graceful)</span><br><span class="line">echo -n &quot;Reloading $DESC configuration...&quot;</span><br><span class="line">do_reload</span><br><span class="line">echo &quot;.&quot;</span><br><span class="line">;;</span><br><span class="line">restart)</span><br><span class="line">echo -n &quot;Restarting $DESC: $NAME&quot;</span><br><span class="line">do_stop</span><br><span class="line">do_start</span><br><span class="line">echo &quot;.&quot;</span><br><span class="line">;;</span><br><span class="line">*)</span><br><span class="line">echo &quot;Usage: $SCRIPTNAME &#123;start|stop|reload|restart&#125;&quot; &gt;&amp;2</span><br><span class="line">exit 3</span><br><span class="line">;;</span><br><span class="line">esac</span><br><span class="line">exit 0</span><br></pre></td></tr></table></figure>
+<h6 id="设置执行权限"><a href="#设置执行权限" class="headerlink" title="设置执行权限"></a>设置执行权限</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chmod a+x /etc/init.d/nginx</span><br></pre></td></tr></table></figure>
+<h6 id="注册成服务并且开机自启"><a href="#注册成服务并且开机自启" class="headerlink" title="注册成服务并且开机自启"></a>注册成服务并且开机自启</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chkconfig --add nginx</span><br><span class="line">chkconfig nginx on</span><br></pre></td></tr></table></figure>
+<h6 id="命令"><a href="#命令" class="headerlink" title="命令"></a>命令</h6><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">service nginx start|stop|reload|restart</span><br></pre></td></tr></table></figure>
+<h5 id="配置vim支持nginx-conf语法高亮"><a href="#配置vim支持nginx-conf语法高亮" class="headerlink" title="配置vim支持nginx.conf语法高亮"></a>配置vim支持nginx.conf语法高亮</h5><p>去解压开的nginx目录，拷贝nginx.vim到vim安装目录下，并且配置vim<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd nginx-1.14.0/</span><br><span class="line">cp contrib/vim/syntax/nginx.vim /usr/share/vim/vim74/syntax/</span><br></pre></td></tr></table></figure></p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">vim /usr/share/vim/vim74/filetype.vim</span><br></pre></td></tr></table></figure>
+<p>末尾添加以下内容，/usr/local/nginx/conf/*为nginx make install的目录<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">au BufRead,BufNewFile /usr/local/nginx/conf/* set ft=nginx</span><br></pre></td></tr></table></figure></p>
+]]></content>
       <categories>
         <category>Nginx</category>
       </categories>
@@ -249,9 +1218,32 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[centos下redis的安装及配置]]></title>
-    <url>%2F2018%2F06%2F11%2Fcentos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE%2F</url>
-    <content type="text"><![CDATA[安装redis依赖12yum install -y gcc-c++yum install -y tcl 下载redis并安装12345cd /usr/local/wget http://download.redis.io/releases/redis-3.2.9.tar.gztar -zxvf redis-3.2.9.tar.gzcd redis-3.2.9 make &amp;&amp; make test &amp;&amp; make install redis的生产环境启动方案第一步:&emsp;将redis utils目录下redis_init_script脚本,copy到/etc/init.d目录中,将redis_init_script重命名为redis_7000,7000是这个redis实例监听的端口号.给脚本读写执行的权限. 1234cp ./utils/redis_init_script /etc/init.d/cd /etc/init.dmv redis_init_script redis_7000chmod 777 redis_7000 第二步:&emsp;修改redis_7000脚本的第6行的REDISPORT，设置为相同的端口号(7000),并在顶部加上以下内容.让脚本开机执行. 12# chkconfig: 2345 90 10# description: Redis is a persistent key-value database 1chkconfig redis_7000 on 第三步:&emsp;创建两个目录：/etc/redis（存放redis的配置文件），/var/redis/7000（存放redis的持久化文件）. 123mkdir /etc/redismkdir /var/redismkdir /var/redis/7000 第四步:&emsp;修改redis配置文件（默认在redis安装目录下，redis.conf），拷贝到/etc/redis目录中，修改名称为7000.conf.要修改的配置为: 1234daemonize yes pidfile /var/run/redis_7000.pid port 7000dir /var/redis/7000 1cd /usr/local/redis-3.2.9 12cp ./redis.conf /etc/redismv redis.conf 7000.conf 第五步:&emsp;启动redis 12./redis_7000 startps -ef | grep redis redis-cli的使用连接本机的端口停止redis进程,ip为本机,端口为6379时可不写 1redis-cli -h 127.0.0.1 -p 7000 SHUTDOWN， ping redis的端口，查看是否正常 1redis-cli -p 7000 PING 进入交互式命令行 1redis-cli -p 7000 接着就可以使用redis存取命令操作redis。]]></content>
+    <title>centos下redis的安装及配置</title>
+    <url>/2018/06/11/centos%E4%B8%8Bredis%E7%9A%84%E5%AE%89%E8%A3%85%E5%8F%8A%E9%85%8D%E7%BD%AE/</url>
+    <content><![CDATA[<h4 id="安装redis依赖"><a href="#安装redis依赖" class="headerlink" title="安装redis依赖"></a>安装redis依赖</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">yum install -y gcc-c++</span><br><span class="line">yum install -y tcl</span><br></pre></td></tr></table></figure>
+<a id="more"></a> 
+<h4 id="下载redis并安装"><a href="#下载redis并安装" class="headerlink" title="下载redis并安装"></a>下载redis并安装</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd /usr/local/</span><br><span class="line">wget http://download.redis.io/releases/redis-3.2.9.tar.gz</span><br><span class="line">tar -zxvf redis-3.2.9.tar.gz</span><br><span class="line">cd redis-3.2.9 </span><br><span class="line">make &amp;&amp; make test &amp;&amp; make install</span><br></pre></td></tr></table></figure>
+<h4 id="redis的生产环境启动方案"><a href="#redis的生产环境启动方案" class="headerlink" title="redis的生产环境启动方案"></a>redis的生产环境启动方案</h4><p>第一步:&emsp;将redis utils目录下redis_init_script脚本<br>,copy到/etc/init.d目录中,将redis_init_script重命名为redis_7000,7000是这个redis实例监听的端口号.给脚本读写执行的权限.</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cp ./utils/redis_init_script /etc/init.d/</span><br><span class="line">cd /etc/init.d</span><br><span class="line">mv redis_init_script redis_7000</span><br><span class="line">chmod 777 redis_7000</span><br></pre></td></tr></table></figure>
+<p>第二步:&emsp;修改redis_7000脚本的第6行的REDISPORT，设置为相同的端口号(7000),并在顶部加上以下内容.让脚本开机执行.</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"># chkconfig:   2345 90 10</span><br><span class="line"># description:  Redis is a persistent key-value database</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">chkconfig redis_7000 on</span><br></pre></td></tr></table></figure>
+<p>第三步:&emsp;创建两个目录：/etc/redis（存放redis的配置文件），/var/redis/7000（存放redis的持久化文件）.</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">mkdir /etc/redis</span><br><span class="line">mkdir /var/redis</span><br><span class="line">mkdir /var/redis/7000</span><br></pre></td></tr></table></figure>
+<p>第四步:&emsp;修改redis配置文件（默认在redis安装目录下，redis.conf），拷贝到/etc/redis目录中，修改名称为7000.conf.<br>要修改的配置为:</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">daemonize yes	</span><br><span class="line">pidfile	/var/run/redis_7000.pid 	</span><br><span class="line">port 7000</span><br><span class="line">dir /var/redis/7000</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cd /usr/local/redis-3.2.9</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">cp ./redis.conf /etc/redis</span><br><span class="line">mv redis.conf 7000.conf</span><br></pre></td></tr></table></figure>
+<p>第五步:&emsp;启动redis</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">./redis_7000 start</span><br><span class="line">ps -ef | grep redis</span><br></pre></td></tr></table></figure>
+<h4 id="redis-cli的使用"><a href="#redis-cli的使用" class="headerlink" title="redis-cli的使用"></a>redis-cli的使用</h4><p>连接本机的端口停止redis进程,ip为本机,端口为6379时可不写</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli -h 127.0.0.1 -p 7000 SHUTDOWN，</span><br></pre></td></tr></table></figure>
+<p>ping redis的端口，查看是否正常</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli -p 7000 PING</span><br></pre></td></tr></table></figure>
+<p>进入交互式命令行</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">redis-cli -p 7000</span><br></pre></td></tr></table></figure>
+<p>接着就可以使用redis存取命令操作redis。</p>
+]]></content>
       <categories>
         <category>Redis</category>
       </categories>
@@ -260,9 +1252,12 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[微信小程序实现倒计时的效果]]></title>
-    <url>%2F2018%2F06%2F07%2F%E5%BE%AE%E4%BF%A1%E5%B0%8F%E7%A8%8B%E5%BA%8F%E5%AE%9E%E7%8E%B0%E5%80%92%E8%AE%A1%E6%97%B6%E7%9A%84%E6%95%88%E6%9E%9C%2F</url>
-    <content type="text"><![CDATA[实现效果图： 实现思路:&emsp;&emsp;在onload函数里每秒调用一次getOverTime()函数，此函数将毫秒转换成HH:mm:ss的时间格式，最后重新赋值倒计时文本. wxml文件代码:1&lt;view class=&apos;exam-time&apos;&gt;&#123;&#123;overTime&#125;&#125;&lt;/view&gt; js代码：12345678910111213141516171819202122232425262728293031323334353637383940414243444546474849505152535455565758596061 onLoad: function (options) &#123; let that = this; let endTime = &apos;2018-06-07 19:42:23&apos;; //总剩余秒数 let time = (Date.parse(new Date(endDate)) - Date.parse(new Date())) / 1000; console.log(time); if (time &gt; 1) &#123; setInterval(function () &#123; //每秒调用一次,剩余时间减去1秒 time -= 1; that.getOverTime(time); &#125;, 1000) &#125; else &#123; that.setData(&#123; overTime: &apos;时间到&apos; &#125;); &#125; &#125;, /** * 将剩余时间转换成毫秒数，换算成 HH:mm:ss的时间格式 */getOverTime: function (overSecond) &#123; let that = this; var overTime; if (null != overSecond &amp;&amp; &quot;&quot; != overSecond) &#123; if (overSecond &gt; 0 &amp;&amp; overSecond &lt; 60 * 60) &#123; // 一小时内 let minute = Math.floor(overSecond / 60 % 60); if (minute &lt; 10) &#123; minute = &apos;0&apos; + minute; &#125; let second = Math.floor(overSecond % 60); if (second &lt; 10) &#123; second = &apos;0&apos; + second; &#125; overTime = minute + &apos;:&apos; + second; &#125; else if (overSecond &gt;= 60 * 60 &amp;&amp; overSecond &lt; 60 * 60 * 24) &#123; //一天内 var hour = Math.floor(overSecond / 3600 % 24); if (hour &lt; 10) &#123; hour = &apos;0&apos; + hour; &#125; let minute = Math.floor(overSecond / 60 % 60); if (minute &lt; 10) &#123; minute = &apos;0&apos; + minute; &#125; let second = Math.floor(overSecond % 60); if (second &lt; 10) &#123; second = &apos;0&apos; + second; &#125; overTime = hour + &apos;:&apos; + minute + &apos;:&apos; + second; &#125; else &#123; return; &#125; &#125; console.log(overTime); that.setData(&#123; overTime: &apos;倒计时&apos; + overTime &#125; ); &#125;]]></content>
+    <title>微信小程序实现倒计时的效果</title>
+    <url>/2018/06/07/%E5%BE%AE%E4%BF%A1%E5%B0%8F%E7%A8%8B%E5%BA%8F%E5%AE%9E%E7%8E%B0%E5%80%92%E8%AE%A1%E6%97%B6%E7%9A%84%E6%95%88%E6%9E%9C/</url>
+    <content><![CDATA[<h4 id="实现效果图："><a href="#实现效果图：" class="headerlink" title="实现效果图："></a>实现效果图：</h4><p><img src="/2018/06/07/微信小程序实现倒计时的效果/倒计时.png"><a id="more"></a> </p>
+<h4 id="实现思路"><a href="#实现思路" class="headerlink" title="实现思路:"></a>实现思路:</h4><p>&emsp;&emsp;在onload函数里每秒调用一次getOverTime()函数，此函数将毫秒转换成HH:mm:ss的时间格式，最后重新赋值倒计时文本.</p>
+<h4 id="wxml文件代码"><a href="#wxml文件代码" class="headerlink" title="wxml文件代码:"></a>wxml文件代码:</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;view class=&apos;exam-time&apos;&gt;&#123;&#123;overTime&#125;&#125;&lt;/view&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="js代码："><a href="#js代码：" class="headerlink" title="js代码："></a>js代码：</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line"> onLoad: function (options) &#123;</span><br><span class="line">    let that = this;</span><br><span class="line">    let endTime = &apos;2018-06-07 19:42:23&apos;;</span><br><span class="line">    //总剩余秒数</span><br><span class="line">    let time = (Date.parse(new Date(endDate)) - Date.parse(new Date())) / 1000;</span><br><span class="line">    console.log(time);</span><br><span class="line">    if (time &gt; 1) &#123;</span><br><span class="line">      setInterval(function () &#123;</span><br><span class="line">        //每秒调用一次,剩余时间减去1秒</span><br><span class="line">        time -= 1;</span><br><span class="line">        that.getOverTime(time);</span><br><span class="line">      &#125;, 1000)</span><br><span class="line">    &#125; else &#123;</span><br><span class="line">      that.setData(&#123; overTime: &apos;时间到&apos; &#125;);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;,</span><br><span class="line">  /**</span><br><span class="line">   * 将剩余时间转换成毫秒数，换算成 HH:mm:ss的时间格式</span><br><span class="line">   */</span><br><span class="line">getOverTime: function (overSecond) &#123;</span><br><span class="line">    let that = this;</span><br><span class="line">    var overTime;</span><br><span class="line">    if (null != overSecond &amp;&amp; &quot;&quot; != overSecond) &#123;</span><br><span class="line">      if (overSecond &gt; 0 &amp;&amp; overSecond &lt; 60 * 60) &#123;</span><br><span class="line">        // 一小时内</span><br><span class="line">        let minute = Math.floor(overSecond / 60 % 60);</span><br><span class="line">        if (minute &lt; 10) &#123;</span><br><span class="line">          minute = &apos;0&apos; + minute;</span><br><span class="line">        &#125;</span><br><span class="line">        let second = Math.floor(overSecond % 60);</span><br><span class="line">        if (second &lt; 10) &#123;</span><br><span class="line">          second = &apos;0&apos; + second;</span><br><span class="line">        &#125;</span><br><span class="line">        overTime = minute + &apos;:&apos; + second;</span><br><span class="line">      &#125; else if (overSecond &gt;= 60 * 60 &amp;&amp; overSecond &lt; 60 * 60 * 24) &#123;</span><br><span class="line">        //一天内</span><br><span class="line">        var hour = Math.floor(overSecond / 3600 % 24);</span><br><span class="line">        if (hour &lt; 10) &#123;</span><br><span class="line">          hour = &apos;0&apos; + hour;</span><br><span class="line">        &#125;</span><br><span class="line">        let minute = Math.floor(overSecond / 60 % 60);</span><br><span class="line">        if (minute &lt; 10) &#123;</span><br><span class="line">          minute = &apos;0&apos; + minute;</span><br><span class="line">        &#125;</span><br><span class="line">        let second = Math.floor(overSecond % 60);</span><br><span class="line">        if (second &lt; 10) &#123;</span><br><span class="line">          second = &apos;0&apos; + second;</span><br><span class="line">        &#125;</span><br><span class="line">        overTime = hour + &apos;:&apos; + minute + &apos;:&apos; + second;</span><br><span class="line">      &#125;</span><br><span class="line">      else &#123;</span><br><span class="line">        return;</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    console.log(overTime);</span><br><span class="line">    that.setData(&#123;</span><br><span class="line">      overTime: &apos;倒计时&apos; + overTime</span><br><span class="line">    &#125;</span><br><span class="line">    );</span><br><span class="line">  &#125;</span><br></pre></td></tr></table></figure>]]></content>
       <categories>
         <category>前端</category>
       </categories>
@@ -271,9 +1266,13 @@
       </tags>
   </entry>
   <entry>
-    <title><![CDATA[POI转换Excel为List]]></title>
-    <url>%2F2018%2F05%2F17%2FPOI%E8%BD%AC%E6%8D%A2Excel%E4%B8%BAList%2F</url>
-    <content type="text"><![CDATA[&emsp;&emsp;使用POI将Excel文件转换成List,实现批量导入数据的功能. 引入POI所依赖的Jar包12345678910&lt;dependency&gt; &lt;groupId&gt;org.apache.poi&lt;/groupId&gt; &lt;artifactId&gt;poi&lt;/artifactId&gt; &lt;version&gt;3.10-FINAL&lt;/version&gt;&lt;/dependency&gt;&lt;dependency&gt; &lt;groupId&gt;org.apache.poi&lt;/groupId&gt; &lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt; &lt;version&gt;3.10-FINAL&lt;/version&gt;&lt;/dependency&gt; 转换Excel文件为List集合&emsp;&emsp;这里需要先定义实体，字段数量与Excel列数相同。 123456789101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899100101102103104105106107108109110111112113114115/** * @param filePath 文件路径 * @param clazz 自定义实体 */ public static &lt;T&gt; List&lt;T&gt; getListFromExcel(String filePath, Class&lt;T&gt; clazz) throws Exception &#123; if (&quot;&quot;.equals(filePath)) &#123; throw new IllegalArgumentException(&quot;Excel读取错误!&quot;); &#125; InputStream is = new FileInputStream(filePath); //读取Excel内容 List&lt;List&lt;String&gt;&gt; list = ExcelUtil.readExcel(is); List&lt;T&gt; listBean = new ArrayList&lt;T&gt;(); //获取传进来的实体所有setter方法 List&lt;Method&gt; setMethods = getSetMethods(clazz); for (int i = 1; i &lt; list.size(); i++) &#123; T ins = clazz.newInstance(); List&lt;String&gt; listStr = list.get(i); for (int j = 0; j &lt; listStr.size(); j++) &#123; //调用Set方法赋值 if (j &lt; setMethods.size()) &#123; setMethods.get(j).invoke(ins, listStr.get(j)); &#125; &#125; listBean.add(ins); &#125; return listBean; &#125; public static List&lt;List&lt;String&gt;&gt; readExcel(InputStream is) &#123; Workbook wb = null; try &#123; wb = WorkbookFactory.create(is); &#125; catch (Exception e) &#123; throw new IllegalArgumentException(&quot;Excel读取错误!&quot;); &#125; /* 得到第一个sheet */ Sheet sheet = wb.getSheetAt(0); /* 得到Excel的行数 */ int totalRows = sheet.getPhysicalNumberOfRows(); /* 得到Excel的列数 */ int totalCells = 0; if (totalRows &gt;= 1 &amp;&amp; sheet.getRow(0) != null) &#123;// 校验行数 totalCells = sheet.getRow(0).getPhysicalNumberOfCells(); &#125; List&lt;List&lt;String&gt;&gt; dataLst = new LinkedList&lt;List&lt;String&gt;&gt;(); /* 循环Excel的行 */ for (int r = 0; r &lt; totalRows; r++) &#123; Row row = sheet.getRow(r); if (row == null) continue;// 本行为空则结束本次循环 List&lt;String&gt; rowLst = new LinkedList&lt;String&gt;(); /* 循环Excel的列 转换单元格值为String*/ for (int c = 0; c &lt; totalCells; c++) &#123; Cell cell = row.getCell(c); String cellValue = &quot;&quot;; if (null != cell) &#123; switch (cell.getCellType()) &#123; case Cell.CELL_TYPE_NUMERIC: // 数字 cellValue = cell.getNumericCellValue() + &quot;&quot;; break; case Cell.CELL_TYPE_STRING: // 字符串 cellValue = cell.getStringCellValue(); break; case Cell.CELL_TYPE_BOOLEAN: // Boolean cellValue = cell.getBooleanCellValue() + &quot;&quot;; break; case Cell.CELL_TYPE_FORMULA: // 公式 cellValue = cell.getCellFormula() + &quot;&quot;; break; case Cell.CELL_TYPE_BLANK: // 空值 cellValue = &quot;&quot;; break; case Cell.CELL_TYPE_ERROR: cellValue = &quot;非法字符&quot;; break; default: cellValue = &quot;未知类型&quot;; break; &#125; &#125; rowLst.add(cellValue); &#125; /* 保存第r行的第c列 */ dataLst.add(rowLst); &#125; return dataLst; &#125; private static List&lt;Method&gt; getSetMethods(Class clazz) &#123; Class[] parameterTypes = new Class[1]; Field[] fields = clazz.getDeclaredFields(); parameterTypes[0] = null; String filedName = &quot;&quot;; Method method = null; StringBuilder setMethodName = new StringBuilder(); List&lt;Method&gt; setMethods = new ArrayList&lt;Method&gt;(); for (int i = 0; i &lt; fields.length; i++) &#123; fields[i].setAccessible(true); filedName = fields[i].getName(); setMethodName.delete(0,setMethodName.length()); setMethodName.append(&quot;set&quot;).append(filedName.substring(0,1).toUpperCase()).append(filedName.substring(1)); parameterTypes[0] = fields[i].getType(); try &#123; method = clazz.getMethod(setMethodName.toString(), parameterTypes); &#125; catch (NoSuchMethodException e) &#123; e.printStackTrace(); &#125; setMethods.add(method); &#125; return setMethods; &#125;]]></content>
+    <title>POI转换Excel为List</title>
+    <url>/2018/05/17/POI%E8%BD%AC%E6%8D%A2Excel%E4%B8%BAList/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;使用POI将Excel文件转换成List,实现批量导入数据的功能.</p></div><a id="more"></a> 
+<h4 id="引入POI所依赖的Jar包"><a href="#引入POI所依赖的Jar包" class="headerlink" title="引入POI所依赖的Jar包"></a>引入POI所依赖的Jar包</h4><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.poi&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;poi&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.10-FINAL&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;org.apache.poi&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;poi-ooxml&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;3.10-FINAL&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h4 id="转换Excel文件为List集合"><a href="#转换Excel文件为List集合" class="headerlink" title="转换Excel文件为List集合"></a>转换Excel文件为List集合</h4><p>&emsp;&emsp;这里需要先定义实体，字段数量与Excel列数相同。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">/**</span><br><span class="line"> * @param filePath 文件路径 </span><br><span class="line"> * @param clazz 自定义实体</span><br><span class="line"> */</span><br><span class="line"> public static &lt;T&gt; List&lt;T&gt; getListFromExcel(String filePath, Class&lt;T&gt; clazz)</span><br><span class="line">           throws Exception &#123;</span><br><span class="line">       if (&quot;&quot;.equals(filePath)) &#123;</span><br><span class="line">           throw new IllegalArgumentException(&quot;Excel读取错误!&quot;);</span><br><span class="line">       &#125;</span><br><span class="line">       InputStream is = new FileInputStream(filePath);</span><br><span class="line">       //读取Excel内容</span><br><span class="line">       List&lt;List&lt;String&gt;&gt; list = ExcelUtil.readExcel(is);</span><br><span class="line">       List&lt;T&gt; listBean = new ArrayList&lt;T&gt;();</span><br><span class="line">       </span><br><span class="line">       //获取传进来的实体所有setter方法</span><br><span class="line">       List&lt;Method&gt; setMethods = getSetMethods(clazz);</span><br><span class="line">       for (int i = 1; i &lt; list.size(); i++) &#123;</span><br><span class="line">           T ins = clazz.newInstance();</span><br><span class="line">           List&lt;String&gt; listStr = list.get(i);</span><br><span class="line">           for (int j = 0; j &lt; listStr.size(); j++) &#123;</span><br><span class="line">               //调用Set方法赋值</span><br><span class="line">               if (j &lt; setMethods.size()) &#123;</span><br><span class="line">                   setMethods.get(j).invoke(ins, listStr.get(j));</span><br><span class="line">               &#125;</span><br><span class="line">           &#125;</span><br><span class="line">           listBean.add(ins);</span><br><span class="line">       &#125;</span><br><span class="line">       return listBean;</span><br><span class="line">   &#125;</span><br><span class="line">   </span><br><span class="line">    public static List&lt;List&lt;String&gt;&gt; readExcel(InputStream is) &#123;</span><br><span class="line">       Workbook wb = null;</span><br><span class="line">       try &#123;</span><br><span class="line">           wb = WorkbookFactory.create(is);</span><br><span class="line">       &#125; catch (Exception e) &#123;</span><br><span class="line">           throw new IllegalArgumentException(&quot;Excel读取错误!&quot;);</span><br><span class="line">       &#125;</span><br><span class="line">       /* 得到第一个sheet */</span><br><span class="line">       Sheet sheet = wb.getSheetAt(0);</span><br><span class="line">       /* 得到Excel的行数 */</span><br><span class="line">       int totalRows = sheet.getPhysicalNumberOfRows();</span><br><span class="line">	/* 得到Excel的列数 */</span><br><span class="line">       int totalCells = 0;</span><br><span class="line">       if (totalRows &gt;= 1 &amp;&amp; sheet.getRow(0) != null) &#123;// 校验行数</span><br><span class="line">           totalCells = sheet.getRow(0).getPhysicalNumberOfCells();</span><br><span class="line">       &#125;</span><br><span class="line">       List&lt;List&lt;String&gt;&gt; dataLst = new LinkedList&lt;List&lt;String&gt;&gt;();</span><br><span class="line">	/* 循环Excel的行 */</span><br><span class="line">       for (int r = 0; r &lt; totalRows; r++) &#123;</span><br><span class="line">           Row row = sheet.getRow(r);</span><br><span class="line">           if (row == null)</span><br><span class="line">               continue;// 本行为空则结束本次循环</span><br><span class="line">           List&lt;String&gt; rowLst = new LinkedList&lt;String&gt;();</span><br><span class="line">		/* 循环Excel的列 转换单元格值为String*/</span><br><span class="line">           for (int c = 0; c &lt; totalCells; c++) &#123;</span><br><span class="line">               Cell cell = row.getCell(c);</span><br><span class="line">               String cellValue = &quot;&quot;;</span><br><span class="line">               if (null != cell) &#123;</span><br><span class="line">                   switch (cell.getCellType()) &#123;</span><br><span class="line">                       case Cell.CELL_TYPE_NUMERIC: // 数字</span><br><span class="line">                           cellValue = cell.getNumericCellValue() + &quot;&quot;;</span><br><span class="line">                           break;</span><br><span class="line">                       case Cell.CELL_TYPE_STRING: // 字符串</span><br><span class="line">                           cellValue = cell.getStringCellValue();</span><br><span class="line">                           break;</span><br><span class="line">                       case Cell.CELL_TYPE_BOOLEAN: // Boolean</span><br><span class="line">                           cellValue = cell.getBooleanCellValue() + &quot;&quot;;</span><br><span class="line">                           break;</span><br><span class="line">                       case Cell.CELL_TYPE_FORMULA: // 公式</span><br><span class="line">                           cellValue = cell.getCellFormula() + &quot;&quot;;</span><br><span class="line">                           break;</span><br><span class="line">                       case Cell.CELL_TYPE_BLANK: // 空值</span><br><span class="line">                           cellValue = &quot;&quot;;</span><br><span class="line">                           break;</span><br><span class="line">                       case Cell.CELL_TYPE_ERROR:</span><br><span class="line">                           cellValue = &quot;非法字符&quot;;</span><br><span class="line">                           break;</span><br><span class="line">                       default:</span><br><span class="line">                           cellValue = &quot;未知类型&quot;;</span><br><span class="line">                           break;</span><br><span class="line">                   &#125;</span><br><span class="line">               &#125;</span><br><span class="line">               rowLst.add(cellValue);</span><br><span class="line">           &#125;</span><br><span class="line">		/* 保存第r行的第c列 */</span><br><span class="line">           dataLst.add(rowLst);</span><br><span class="line">       &#125;</span><br><span class="line">       return dataLst;</span><br><span class="line">   &#125;</span><br><span class="line">   </span><br><span class="line">    private static List&lt;Method&gt; getSetMethods(Class clazz) &#123;</span><br><span class="line">       Class[] parameterTypes = new Class[1];</span><br><span class="line">       Field[] fields = clazz.getDeclaredFields();</span><br><span class="line">       parameterTypes[0] = null;</span><br><span class="line">       String filedName = &quot;&quot;;</span><br><span class="line">       Method method = null;</span><br><span class="line"></span><br><span class="line">       StringBuilder setMethodName = new StringBuilder();</span><br><span class="line">       List&lt;Method&gt; setMethods = new ArrayList&lt;Method&gt;();</span><br><span class="line">       for (int i = 0; i &lt; fields.length; i++) &#123;</span><br><span class="line">           fields[i].setAccessible(true);</span><br><span class="line">           filedName = fields[i].getName();</span><br><span class="line">           setMethodName.delete(0,setMethodName.length());</span><br><span class="line">           setMethodName.append(&quot;set&quot;).append(filedName.substring(0,1).toUpperCase()).append(filedName.substring(1));</span><br><span class="line">           parameterTypes[0] = fields[i].getType();</span><br><span class="line"></span><br><span class="line">           try &#123;</span><br><span class="line">               method = clazz.getMethod(setMethodName.toString(), parameterTypes);</span><br><span class="line">           &#125; catch (NoSuchMethodException e) &#123;</span><br><span class="line">               e.printStackTrace();</span><br><span class="line">           &#125;</span><br><span class="line">           setMethods.add(method);</span><br><span class="line">       &#125;</span><br><span class="line">       return setMethods;</span><br><span class="line">   &#125;</span><br></pre></td></tr></table></figure>
+]]></content>
       <categories>
         <category>Java</category>
       </categories>
