@@ -1,6 +1,284 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>RocketMQ事务消息底层实现原理分析</title>
+    <url>/2019/12/19/RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章分析一下RocketMQ事务消息底层实现原理。</p></div><a id="more"></a> 
+<h6 id="事务消息实现原理流程"><a href="#事务消息实现原理流程" class="headerlink" title="事务消息实现原理流程"></a>事务消息实现原理流程</h6><p>RocketMQ 4.3后支持事务消息，采用了2PC的方案来提交事务消息，同时增加一个补偿逻辑来处理二阶段超时或者失败的消息，以下为事务消息实现原理图：<br><img src="https://img-blog.csdnimg.cn/20200228215750406.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>事务消息发送及提交流程：</p>
+<ol>
+<li>发送消息（half消息）</li>
+<li>服务端响应消息写入结果</li>
+<li>根据发送结果执行本地事务（如果写入失败，此时half消息对业务不可见，本地逻辑不执行）</li>
+<li>根据本地事务状态执行Commit或者Rollback（Commit操作生成消息索引offset，消息写入commintlog）</li>
+</ol>
+<p>事务消息补偿流程：</p>
+<ol>
+<li>对没有Commit/Rollback的事务消息（pending状态的消息），从服务端发起一次“回查”，15次后还未确认状态，就当做rollback处理；</li>
+<li>Producer收到回查消息，检查回查消息对应的本地事务的状态；</li>
+<li>根据本地事务状态，重新Commit或者Rollback；</li>
+</ol>
+<p>补偿阶段是用于解决消息Commit或者Rollback发生超时或者失败的情况，在事务消息实现的流程中有以下几个关键问题；</p>
+<h6 id="half消息如何對消费者不可见？"><a href="#half消息如何對消费者不可见？" class="headerlink" title="half消息如何對消费者不可见？"></a>half消息如何對消费者不可见？</h6><p>通过RocketMQ内部的<code>RMQ_SYS_TRANS_HALF_TOPIC</code>实现half消息对消费者不可见；对于事务消息机制之下的half消息，RocketMQ是写入内部Topic的ConsumeQueue的，不是写入我们指定的order_pay_success_topic的ConsumeQueue的；</p>
+<p>写入一个Topic，最终是定位到这个Topic的某个MessageQueue，然后定位到一台Broker机器上去，然后写入的是Broker上的CommitLog文件，同时将消费索引offset写入MessageQueue对应的ConsumeQueue文件；</p>
+<p>所以通过上面的图我们知道，如果写入一条half消息到order_pay_success_topic里去，会定位到这个Topic的一个MessageQueue，然后定位到上图RocketMQ的一台机器上去，RocketMQ一旦发现发送的是一个half消息，就不会把这个half消息的offset写入order_pay_success_topic的ConsumeQueue里去。</p>
+<p>而是会把这条half消息写入到自己内部的<code>RMQ_SYS_TRANS_HALF_TOPIC</code>；</p>
+<h6 id="何时收到half消息成功的响应？"><a href="#何时收到half消息成功的响应？" class="headerlink" title="何时收到half消息成功的响应？"></a>何时收到half消息成功的响应？</h6><p>必须要half消息进入到RocketMQ内部的<code>RMQ_SYS_TRANS_HALF_TOPIC</code>的ConsumeQueue文件了，此时就会认为half消息写入成功了，然后就会返回响应给订单系统。所以这个时候，一旦订单系统收到这个half消息写入成功的响应，必然就知道这个half消息已经在RocketMQ内部了。</p>
+<h6 id="假如因为各种问题，没有执行rollback或者commit会怎么样？"><a href="#假如因为各种问题，没有执行rollback或者commit会怎么样？" class="headerlink" title="假如因为各种问题，没有执行rollback或者commit会怎么样？"></a>假如因为各种问题，没有执行rollback或者commit会怎么样？</h6><p>如果因为网路故障等问题，没有执行rollback或者commit，这个时候会在后台有定时任务，定时任务会去扫描<code>RMQ_SYS_TRANS_HALF_TOPIC</code>中的half消息，如果超过一定时间还是half消息，他会回调订单系统的接口，让生产者判断这个half消息是要rollback还是commit；</p>
+<p>假设一直没有执行commit/rollback，RocketMQ会回调订单系统的接口去判断half消息的状态，但是最多就是回调15次，如果15次之后都没法告知他half消息的状态，就自动把消息标记为rollback。</p>
+<h6 id="rollback操作如何标记消息回滚？"><a href="#rollback操作如何标记消息回滚？" class="headerlink" title="rollback操作如何标记消息回滚？"></a>rollback操作如何标记消息回滚？</h6><p>假设我们的订单系统执行了rollback请求，那么此时就需要对消息进行回滚。</p>
+<p>因为RocketMQ都是顺序把消息写入磁盘文件的，所以在这里如果执行rollback，本质就是用一个OP操作来标记half消息的状态，RocketMQ内部有一个<code>OP_TOPIC</code>，此时可以写一条rollback OP记录到这个Topic里，标记某个half消息是rollback了。</p>
+<h6 id="commit后，如何让消息对消费者可见？"><a href="#commit后，如何让消息对消费者可见？" class="headerlink" title="commit后，如何让消息对消费者可见？"></a>commit后，如何让消息对消费者可见？</h6><p>执行commit操作之后，RocketMQ就会在<code>OP_TOPIC</code>里写入一条记录，标记half消息已经是commit状态了。</p>
+<p>接着需要把放在<code>RMQ_SYS_TRANS_HALF_TOPIC中</code>的half消息的消费索引offset给写入到order_pay_success_topic的ConsumeQueue里去，然后消费者系统可以就可以看到这条消息进行消费了。</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ死信队列</title>
+    <url>/2019/12/16/RocketMQ%E6%AD%BB%E4%BF%A1%E9%98%9F%E5%88%97/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章介绍了RocketMQ死信队列。</p></div><a id="more"></a> 
+<h6 id="RocketMQ是如何进行消费重试的？"><a href="#RocketMQ是如何进行消费重试的？" class="headerlink" title="RocketMQ是如何进行消费重试的？"></a>RocketMQ是如何进行消费重试的？</h6><p>生产者推送消息到MQ，然后消费者会从MQ里获取消息去执行后续的处理。</p>
+<p>那么这个时候，消费者系统的数据库宕机了，就必然会导致消费者从MQ里获取到消息之后是没办法进行业务逻辑处理的；</p>
+<p>在下面的代码片段中，注册了一个监听器回调函数，当Consumer获取到消息之后，就会交给消费函数来处理。<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">consumer.registerMessageListener(</span><br><span class="line">    new MessageListenerConcurrently()&#123;</span><br><span class="line">        @Override</span><br><span class="line">	public ConsumerConcurrentlyStatus consumeMessage(</span><br><span class="line">	    List&lt;MessageExt msgs,</span><br><span class="line">	    ConsumeConcurrentlyContext)&#123;</span><br><span class="line">	        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;</span><br><span class="line">	    &#125;</span><br><span class="line">	)</span><br><span class="line">    &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<p>比如，如果返回的是<code>CONSUME_SUCCESS</code>，那么Consumer就知道这批消息处理完成了，就会对提交这批消息的Offset到broker去，然后下次就会继续从broker获取下一批消息来处理了。</p>
+<p>如果我们因为数据库宕机等问题，对这批消息的处理是异常的，此时没法处理这批消息，就不能返回<code>CONSUME_SUCCESS</code>状态，不然下一次就会处理下一批消息，导致这批消息丢失了；</p>
+<p>此时我们就应该返回一个<code>RECONSUME_LATER</code>状态，意思是，现在没法完成这批消息的处理，稍后再次给消费者这批消息重试;<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">consumer.registerMessageListener(</span><br><span class="line">    new MessageListenerConcurrently()&#123;</span><br><span class="line">        @Override</span><br><span class="line">	public ConsumerConcurrentlyStatus consumeMessage(</span><br><span class="line">	    List&lt;MessageExt msgs,</span><br><span class="line">	    ConsumeConcurrentlyContext)&#123;</span><br><span class="line">	        try&#123;</span><br><span class="line">		    // 数据库操作</span><br><span class="line">		    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;</span><br><span class="line">		&#125;catch(Exception e)&#123;</span><br><span class="line">		    // 发现异常，返回稍后重试状态</span><br><span class="line">		    return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;</span><br><span class="line">		&#125;</span><br><span class="line">	    &#125;</span><br><span class="line">	)</span><br><span class="line">    &#125;</span><br><span class="line">);</span><br></pre></td></tr></table></figure></p>
+<h6 id="重试队列"><a href="#重试队列" class="headerlink" title="重试队列"></a>重试队列</h6><p>简单来说，RocketMQ会有一个针对这个ConsumerGroup的<strong>重试队列</strong>，如果返回了<code>RECONSUME_LATER</code>状态，他会把这批消息放到这个消费组的重试队列中去。</p>
+<p>比如消费组的名称是“PaySuccessConsumerGroup”，意思是支付系统的消费组，那么就会有一个“%RETRY%PaySuccessConsumerGroup”这个名字的重试队列。</p>
+<p>然后过一段时间之后，重试队列中的消息会再次给消费者进行处理。如果再次失败，又返回了<code>RECONSUME_LATER</code>，那么会再过一段时间来进行处理，默认最多是重试<code>16</code>次！每次重试之间的间隔时间是不一样的，这个间隔时间可以如下进行配置：</p>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line"><span class="comment"># 第一次重试是1秒后，第二次重试是5秒后，第三次重试是10秒后，以此类推，最多重试16次！</span></span><br><span class="line">messageDelayLevel=1s 5s 10s 30s 1m 2m 3m 4m 5m 6m 7m 8m 9m 10m 20m 30m 1h 2h</span><br></pre></td></tr></table></figure>
+<h6 id="死信队列"><a href="#死信队列" class="headerlink" title="死信队列"></a>死信队列</h6><p>如果连续重试16次还是无法处理消息，这批消息会自动进入<strong>死信队列</strong>，也就是存放死掉消息的队列；</p>
+<p>死信队列中的消息如何处理是要看业务场景的，比如可以专门开一个后台线程，就是订阅<code>“%DLQ%PaySuccessConsumerGroup”</code>这个死信队列，对死信队列中的消息，还是一直不停的重试处理，或者就是直接丢弃不处理了；</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ消息积压问题</title>
+    <url>/2019/12/13/RocketMQ%E6%B6%88%E6%81%AF%E7%A7%AF%E5%8E%8B%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息积压问题出现的场景和解决方案。</p></div><a id="more"></a> 
+<h6 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h6><p>生产者系统会负责不停的把消息写入RocketMQ里去，然后消费者系统就是负责从RocketMQ里消费消息。</p>
+<p>系统在生产环境是有高峰和低谷的，在晚上几个小时的高峰期内，大概就会有100多万条消息进入RocketMQ。然后消费者系统从RocketMQ里获取到消息之后，会依赖一些Redis去进行一些业务逻辑的实现。</p>
+<p>然后有一天晚上就出现了一个问题，消费者系统依赖的Redis就挂掉了，导致消费者系统自己也没法运作了，此时就没法继续从RocketMQ里消费数据和处理了，消费者系统几乎就处于停滞不动的状态。然后生产者系统在晚上几个小时的高峰期内，就往MQ里写入了100多万的消息，此时都积压在MQ里了，根本没有系统消费和处理。</p>
+<h6 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h6><p>一般来说有以下几种方案：</p>
+<ul>
+<li><strong>全部丢弃</strong>：如果这些消息允许丢失，那么此时可以紧急修改消费者系统的代码，在代码里对所有的消息都获取到就直接丢弃，不做任何的处理，这样可以迅速的让积压在MQ里的百万消息被处理掉，只不过处理方式就是全部丢弃而已。</li>
+<li><strong>等待Redis恢复</strong>：往往对很多系统而言，不能简单粗暴的丢弃这些消息，所以最常见的办法，还是先等待消费者系统底层依赖的Redis先恢复，恢复之后，就可以根据线上Topic的MessageQueue的数量来看看如何后续处理。</li>
+<li><strong>临时扩容消费者系统</strong>，增加机器来加快消费速度，但要考虑依赖的Redis也要能抗住压力；</li>
+</ul>
+<h6 id="临时扩容消费者系统"><a href="#临时扩容消费者系统" class="headerlink" title="临时扩容消费者系统"></a>临时扩容消费者系统</h6><p>假如Topic有20个MessageQueue，然后只有4个消费者系统在消费，那么每个消费者系统会从5个MessageQueue里获取消息，所以此时如果你仅仅依靠4个消费者系统是肯定不够的，毕竟MQ里积压了百万消息了。</p>
+<p>此时可以临时申请16台机器多部署16个消费者系统的实例，然后20个消费者系统同时消费，每个消费者消费一个MessageQueue的消息，此时会发现消费的速度提高了5倍，很快积压的百万消息都会被处理完毕。<br>但是这里同时要考虑到Redis必须要能抗住临时增加了5倍的读写压力，因为原来就4个消费者系统在读写Redis，现在临时变成了20个消费者系统了。</p>
+<p>当你处理完百万积压的消息之后，就可以下线多余的16台机器了。</p>
+<p><strong>那么如果Topic总共就只有4个MessageQueue，只有4个消费者系统呢？</strong><br>这个时候就没办法扩容消费者系统了，因为再多的消费者系统，还是只有4个MessageQueue，没法并行消费。</p>
+<p>所以此时往往是临时修改那4个消费者系统的代码，让他们获取到消息然后不写入Redis，而是直接把消息写入一个新的Topic，这个速度是很快的，因为仅仅是读写MQ而已。</p>
+<p>然后新的Topic有20个MessageQueue，然后再部署20台临时增加的消费者系统，去消费新的Topic后写入数据到NoSQL里去，这样子也可以迅速的增加消费者系统的并行处理能力，使用一个新的Topic来允许更多的消费者系统并行处理。</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ消息乱序问题</title>
+    <url>/2019/12/09/RocketMQ%E6%B6%88%E6%81%AF%E4%B9%B1%E5%BA%8F%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。</p></div><a id="more"></a> 
+<h5 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h5><p>大数据团队要统计报表，如果让大数据系统自己直接跑复杂的大SQL在活动系统的活动数据库上来出一些数据报表，是会严重影响本系统的性能的，所以这个方案优化为了，基于Canal这样的中间件去监听数据库的binlog，然后把这些binlog发送到MQ里去，然后让大数据团队还原数据到Spark之类的系统进行统计；</p>
+<p>但是这就出现了一个问题：活动数据库的binlog消息乱序;</p>
+<h6 id="为什么会出现消息乱序？"><a href="#为什么会出现消息乱序？" class="headerlink" title="为什么会出现消息乱序？"></a>为什么会出现消息乱序？</h6><p>每个Topic指定多个MessageQueue，然后写入消息的时候，其实是会把消息均匀分发给不同的MessageQueue的。比如在写入binlog到MQ的时候，可能会把insert binlog写入到一个MessageQueue里去，update binlog写入到另外一个MessageQueue里去；</p>
+<p>接着大数据系统在获取binlog的时候，可能会部署多台机器组成一个Consumer Group，对于Consumer Group中的每台机器都会负责消费一部分MessageQueue的消息，所以可能一台机器从ConsumeQueue01中获取到了insert binlog，一台机器从ConsumeQueue02中获取到了update binlog；</p>
+<p>因为两台机器上的大数据系统并行的去获取binlog，所以完全有可能是其中一个大数据系统先获取到了update binlog去执行了更新操作，此时存储中没有数据，自然是没法更新的。</p>
+<p>然后另外一个大数据系统再获取到insert binlog去执行插入操作，最终导致只有一个初始的活动数据；<br><img src="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h5><h6 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h6><p>Canal往Mq发送消息的时候，必须要保证消息是有序的；</p>
+<p>也就是说比如Canal作为一个中间件从MySQL那里监听和获取binlog，那么当binlog传输到Canal的时候，也必然是有先后顺序的，先是insert binlog，然后是update binlog；</p>
+<h6 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h6><p>让属于同一个活动参与数据的binlog进入一个MessageQueue；</p>
+<p>比如对一个活动参与数据，我们先后执行了insert、update两条SQL语句，也就对应了2条binlog日志。完全可以根据活动参与数据id来进行判断，我们可以往MQ里发送binlog的时候，根据活动参与数据id来判断一下，如果活动参与数据id相同，必须保证他进入同一个MessageQueue。</p>
+<p>可以采用取模的方法，比如有一个活动参与数据id是200，那么他可能有2条binlog，对这两条binlog，必须要用活动参与数据id=200对MessageQueue的数量进行取模，比如MessageQueue一共有15个，那么此时活动参与数据id=200对15取模，就是2；</p>
+<p>通过这个方法，就可以让一个活动参与数据的binlog都按照顺序进入到一个MessageQueue中去；</p>
+<h6 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h6><p>一个Consumer可以处理多个MessageQueue的消息，但是一个MessageQueue只能交给一个Consumer来进行处理，所以一个活动参与数据的binlog只会有序的交给一个Consumer来进行处理！</p>
+<h5 id="有序消息消费失败怎么办？"><a href="#有序消息消费失败怎么办？" class="headerlink" title="有序消息消费失败怎么办？"></a>有序消息消费失败怎么办？</h5><p>在Consumer处理消息的时候，可能会因为底层存储挂了导致消息处理失败，此时可以返回<code>RECONSUME_LATER</code>状态，然后broker会过一会儿自动重试。</p>
+<p>但是这种方式在有序消息是不行的，因为如果consumer获取到活动参与数据的一个insert binlog，结果处理失败了，此时返回了<code>RECONSUME_LATER</code>，那么这条消息会进入重试队列，过一会儿才会重试。</p>
+<p>但是此时broker会直接处理下一条消息，也就是这个活动参与数据的update binlog，此时万一执行成功了，就根本没有数据可以更新！又会出现消息乱序的问题；</p>
+<p>所以对于有序消息的方案中，如果遇到消息处理失败的场景，就必须返回<code>SUSPEND_CURRENT_QUEUE_A_MOMENT</code>这个状态，意思是先等一会儿，一会儿再继续处理这批消息，而不能把这批消息放入重试队列去，然后直接处理下一批消息。</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ消息重复问题</title>
+    <url>/2019/12/06/RocketMQ%E6%B6%88%E6%81%AF%E9%87%8D%E5%A4%8D%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息重复问题出现的场景和解决方案。</p></div><a id="more"></a> 
+<p>RocketMQ出现消息重复问题可能会在生产者系统、生产者系统调用者、消费者系统;</p>
+<h5 id="生产者系统"><a href="#生产者系统" class="headerlink" title="生产者系统"></a>生产者系统</h5><h6 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h6><p>假设生产者系统为了保证消息一定能投递到MQ里去，采用了重试的代码，发送了一条消息到MQ了，MQ已经接收到这条消息了，但是MQ返回响应的时候，网络有问题超时了，没能及时收到MQ返回给生产者的响应。</p>
+<p>这个时候，代码里可能会发现一个网络超时的异常，然后就会进行重试再次发送这个消息到MQ去，然后MQ就会收到一条一模一样的消息，进而导致消息重复发送了;</p>
+<h6 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h6><p>生产者系统一般不用处理消息重复，RocketMQ虽然是支持查询某个消息是否存在的，但是在这个环节直接从MQ查询消息是没这个必要的，而且性能也不太好，会影响接口的性能。</p>
+<p>所以不用在这个环节保证幂等性，也就是可以默许可能会发送重复的消息到MQ里去。</p>
+<h5 id="生产者系统的调用者"><a href="#生产者系统的调用者" class="headerlink" title="生产者系统的调用者"></a>生产者系统的调用者</h5><h6 id="出现场景-1"><a href="#出现场景-1" class="headerlink" title="出现场景"></a>出现场景</h6><p>因为生产者系统处理业务的速度有点慢，导致调用者的请求出现了超时，此时有可能调用者再次重试调用了生产者系统的接口，结果第一次的调用已经成功了，就相当于是一个接口被调用了两次，重复推送了两次消息到MQ;</p>
+<p>如果生产者成功推送了两次消息到MQ，消费者系统必然会消费到两条重复的消息;</p>
+<h6 id="解决方案-1"><a href="#解决方案-1" class="headerlink" title="解决方案"></a>解决方案</h6><p>当调用者系统重试调用生产者系统的接口时，生产者系统需要发送一个请求到MQ去，查询一下当前MQ里是否存在这个订单的支付消息;</p>
+<p>如果有了，那么生产者系统就不要再次发送这条消息到MQ去。</p>
+<p>也可以使用基于Redis的消息发送状态的方案，如果成功发送了一个消息到MQ里去，就在Redis缓存里写一条数据，标记这个消息已经发送过。这种方案一般情况下是可以做到幂等性的，但是如果有时候刚发送了消息到MQ，还没来得及写Redis，系统就挂了，之后接口被重试调用的时候，查Redis还以为消息没发过，就会发送重复的消息到MQ去。</p>
+<h5 id="消费者系统"><a href="#消费者系统" class="headerlink" title="消费者系统"></a>消费者系统</h5><h6 id="出现场景-2"><a href="#出现场景-2" class="headerlink" title="出现场景"></a>出现场景</h6><p>假设消费者系统拿到了一条消息，然后都已经处理成功了，这个时候应该返回一个<code>CONSUME_SUCCESS</code>的状态，然后提交消费进度offset到broker的。但是刚刚处理完，还没来得及提交消息offset到broker，消费者系统宕机了。</p>
+<p>broker就不知道已经处理完了这条消息，然后消费者系统重启之后，broker就会再次把这条消息交给消费者系统，再一次进行处理，这样一条消息就被重复处理了两次;</p>
+<h6 id="解决方案-2"><a href="#解决方案-2" class="headerlink" title="解决方案"></a>解决方案</h6><p>直接基于业务判断法解决，当消费者系统每次拿到一条消息消费成功后，就给数据库里插入一条消费记录，比如短信发送成功，就插入一条短信流水;</p>
+<p>那么如果消费者系统从MQ那里拿到两条重复的消息，只要先去数据库中查询一下，是否对这条消息有对应的消费流水，如果有，就直接返回不做处理了;</p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>一般来说，对于MQ的重复消息问题其实是可以接受的，因为MQ里有多条重复消息，不会对系统的核心数据直接造成影响，但是关键要保证消息不能重复处理。</p>
+<p>要保证消息的幂等性，优先推荐的是业务判断法，直接根据数据存储中的记录来判断这个消息是否处理过，如果处理过了，那就不用再次处理了，</p>
+<p>基于Redis的消息发送状态的方案，在一些极端情况下还是没法完全保证幂等性的。</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ消息丟失问题</title>
+    <url>/2019/12/01/RocketMQ%E6%B6%88%E6%81%AF%E4%B8%9F%E5%A4%B1%E9%97%AE%E9%A2%98/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息丢失问题出现的场景和解决方案。</p></div><a id="more"></a> 
+<p>RocketMQ出现消息丢失可能会在生产者系统、RocketMQ自身、消费者系统;</p>
+<h5 id="生产者系统"><a href="#生产者系统" class="headerlink" title="生产者系统"></a>生产者系统</h5><h6 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h6><p>生产者在推送消息到RocketMQ的过程中，是通过网络去进行传输的，如果这个时候恰巧可能网络抖动，导致这次网络通信失败了。于是这个消息就不能成功投递给MQ；</p>
+<p>即使MQ收到消息了，但是它的网络通信模块的代码出现了异常，也可能导致消息不能投递成功。</p>
+<h6 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h6><p>真正要保证消息一定投递到MQ，同时保证业务系统之间的数据完全一致，<strong>业内最佳的方案还是用基于RocketMQ的事务消息机制</strong>。</p>
+<p>他可以保证生产者系统的本地事务一旦成功，那么必然会投递消息到MQ去，保证业务系统的数据是一致的。而且整个流程中，不需要进行长时间的阻塞和重试。</p>
+<p>但是事务消息的机制是很复杂的，会降低吞吐量；</p>
+<h5 id="RocketMQ自身"><a href="#RocketMQ自身" class="headerlink" title="RocketMQ自身"></a>RocketMQ自身</h5><h6 id="出现场景-1"><a href="#出现场景-1" class="headerlink" title="出现场景"></a>出现场景</h6><p>假设现在生产者系统已经通过<strong>事务消息的机制</strong>，通过half消息 + commit的方式，让消息在MQ里提交了，但是现在对于MQ而言，消息还没有真正的写入磁盘，仅仅停留在os cache中；</p>
+<p>如果此时这台机器突然宕机了，os cache中的数据就会丢失，此时必然会导致消息丢失。</p>
+<p>就算消息已经进入磁盘文件了，但是消费者系统还没有消费这条消息，此时这台机器的磁盘突然就坏了，就会一样导致消息丢失。</p>
+<h6 id="解决方案-1"><a href="#解决方案-1" class="headerlink" title="解决方案"></a>解决方案</h6><p>解决Broker消息丢失：<strong>异步刷盘调整为同步刷盘，通过主从架构模式避免磁盘故障导致的数据丢失</strong>。</p>
+<p><strong>异步刷盘调整为同步刷盘</strong><br>如果一定要确保数据零丢失的话，可以调整MQ的刷盘策略，需要调整broker的配置文件，将其中的<code>flushDiskType</code>配置设置为：<code>SYNC_FLUSH</code>，默认值是<code>ASYNC_FLUSH</code>，即默认是异步刷盘的。</p>
+<p>如果调整为同步刷盘之后，写入MQ的每条消息，只要MQ通知写入成功了，那么消息就已经进入了磁盘文件了;</p>
+<p><strong>主从架构模式避免磁盘故障导致的数据丢失</strong><br>必须让一个Master Broker有一个Slave Broker去同步它的数据，而且一条消息写入成功，必须要让Slave Broker也写入成功，保证数据有多个副本的冗余。</p>
+<p>这样一来，一条消息但凡写入成功了，那就一定会通过Raft协议同步给其他的Broker机器。此时主从两个Broker上都有这条数据了，此时如果Master Broker的磁盘坏了，但是Slave Broker上至少还是有数据的，数据是不会因为磁盘故障而丢失的。</p>
+<h5 id="消费者系统"><a href="#消费者系统" class="headerlink" title="消费者系统"></a>消费者系统</h5><h6 id="出现场景-2"><a href="#出现场景-2" class="headerlink" title="出现场景"></a>出现场景</h6><p>如果消费者系统拿到了某条消息，但是消息目前还在消费者的内存里，还没执行真正的业务逻辑，此时如果直接提交了这条消息的offset到broker去说这条消息已经处理过了；</p>
+<p>接着消费者系统直接崩溃了，内存里的消息就丢失了，但是Broker其实已经收到提交的消息offset了，还以为消费者已经处理完这条消息了，等消费者系统重启的时候，就不会再次消费这条消息了。</p>
+<h6 id="解决方案-2"><a href="#解决方案-2" class="headerlink" title="解决方案"></a>解决方案</h6><p>解决消费者消息丢失：<strong>手动提交offset + 自动故障转移</strong>;</p>
+<p><strong>手动提交offset</strong><br>在默认的Consumer的消费模式之下，<strong>RocketMQ不会出现自动提交offset这种问题</strong>，RocketMQ的消费者中会注册一个监听器，当消费者获取到一批消息之后，就会回调这个监听器函数，让消费者来处理这一批消息。</p>
+<p>当消费者处理完这一批消息了，才会返回<code>ConsumeConcurrentlyStatus.CONSUME_SUCCESS</code>这个状态标识消息都处理结束了，去提交offset到broker去。就算此时消费者系统崩溃了，也是不会丢失消息的。</p>
+<p><strong>自动故障转移</strong><br>如果消费者系统获取到一批消息之后，还没处理完，也就不会返回<code>ConsumeConcurrentlyStatus.CONSUME_SUCCESS</code>这个状态，就不会提交这批消息的offset给broker，如果此时消费者系统突然挂了，broker是不会认为这批消息被处理完了，它其实会感知到消费者系统的一台机器宕机了。</p>
+<p>接着它会把消费者没处理完的那批消息交给消费者系统的其他机器去进行处理，所以在这种情况下，消息也绝对是不会丢失的。</p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>一般不要轻易在随便一个业务里就上如此重的一套方案，要明白用了这套方案之后，会让整个从头到尾的消息流转链路的性能大幅度下降，让MQ的吞吐量大幅度的下降，比如本身系统和MQ配合起来，每秒可以处理几万条消息的，结果落地消息零丢失方案之后，可能每秒只能处理几千条消息了。</p>
+<ul>
+<li>一般建议，对于跟金钱、交易以及核心数据相关的系统和核心链路，可以使用这套消息零丢失方案。比如支付、订单系统，性能可以低一点，但是不能让支付记录丢失；</li>
+<li>而对于其他没那么核心的场景和系统，其实即使丢失一些数据，也不会导致太大的问题，此时可以不采取这些方案，或者可以退化成<strong>同步发送消息 + 反复重试几次</strong>的方案，如果发送消息失败，就重试几次，但是大部分时候可能不需要重试，那么也不会轻易的丢失消息的！最多在这个方案里，可能会出现一些数据不一致的问题。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ生产集群方案</title>
+    <url>/2019/11/30/RocketMQ%E7%94%9F%E4%BA%A7%E9%9B%86%E7%BE%A4%E6%96%B9%E6%A1%88/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本篇文章介绍了基于Dledger实现的RocketMQ集群。</p></div><a id="more"></a> 
+<h6 id="基于Dledger实现RocketMQ高可用自动切换"><a href="#基于Dledger实现RocketMQ高可用自动切换" class="headerlink" title="基于Dledger实现RocketMQ高可用自动切换"></a>基于Dledger实现RocketMQ高可用自动切换</h6><p>RocketMQ 4.5版本之后，支持了Dledger机制，它是基于Raft协议实现的;</p>
+<p>把Dledger融入RocketMQ之后，就可以让一个Master Broker对应多个Slave Broker，也就是说一份数据可以有多份副本。</p>
+<p>此时一旦Master Broker宕机了，就可以在多个副本，也就是多个Slave中，通过Dledger技术和Raft协议算法进行leader选举，直接将一个Slave Broker选举为新的Master Broker，然后这个新的Master Broker就可以对外提供服务了。</p>
+<p>但是Dledger机制要求最少一个Master带两个Slave，这样有三个Broke组成一个Group，作为一个分组来运行。一旦Master宕机，就可以从剩余的两个Slave中选举出来一个新的Master对外提供服务。</p>
+<p>每个Broker（不论是Master和Slave）都会把自己注册到所有的NameServer上去，然后Master Broker还会把数据同步给两个Slave Broker，保证一份数据在不同机器上有多份副本。</p>
+<h6 id="生产集群设计方案"><a href="#生产集群设计方案" class="headerlink" title="生产集群设计方案"></a>生产集群设计方案</h6><p>根据系统压测的整体QPS来看，采用双主双从的高可用架构，实际部署生产环境的集群时，使用高配置的机器，同时合理调整os内核参数、jvm参数、中间件核心参数，如此即可；</p>
+<p>因此在部署的时候，对NameServer采用3台机器部署就足够了，而对于Broker而言采用6台机器来部署，2个Master Broker和4个Slave Broker，这样2个Master Broker每秒最多可以处理十几万消息，4个Slave Broker同时也能每秒提供高吞吐的数据消费，而且全面保证高可用性。</p>
+<h6 id="机器列表"><a href="#机器列表" class="headerlink" title="机器列表"></a>机器列表</h6><p>NameServer：3台，4核 + 8G + 500G磁盘;<br>Broker：6台，8核 + 16G + 500G SSD;</p>
+<p>NameServer是核心的路由服务，但是他一般就是承载Broker注册和心跳、系统的路由表拉取等请求，负载其实很低，因此不需要特别高的机器配置，部署三台也可以实现高可用的效果了。</p>
+<p>Broker是最负载最高的，要承载高并发写入和大量数据存储，所以把最高配置的机器都会留给他，用6台机器组成一个“双Master + 四Slave”的集群。</p>
+<p>部署好集群后，调整Broker的OS内核参数、JVM参数然后重新启动Broker，接着就可以启动生产者和消费者去发送消息和获取消息，然后去观察RocketMQ能承载的QPS，CPU、IO、磁盘、网络等负载。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200228170121587.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="整体架构：高可用、高并发、海量消息、可伸缩"><a href="#整体架构：高可用、高并发、海量消息、可伸缩" class="headerlink" title="整体架构：高可用、高并发、海量消息、可伸缩"></a>整体架构：高可用、高并发、海量消息、可伸缩</h6><ul>
+<li><strong>NameServer</strong>：因为NameServer随便一台机器挂了都不怕，他是集群化部署的，每台机器都有完整的路由信息；</li>
+<li><strong>Broker</strong>：Broker随便挂了一台机器也不怕，挂了Slave对集群没太大影响，挂了Master也会基于Dledger技术实现自动Slave切换为Master；</li>
+<li><strong>并发性</strong>：这个架构可以抗下高并发，因为假设每秒10万QPS的写入，那么只要Topic分散在比如5台Broker上，实际上每个Broker会承载2万QPS写入，也就是说高并发场景下的10万QPS可以分散到多台Broker上抗下来。</li>
+<li><strong>存储</strong>：然后集群足以存储海量消息，因为所有数据都是分布式存储的，每个Topic的数据都是存储在多台Broker机器上的，用集群里多台Master Broker就足以存储海量的消息。</li>
+<li><strong>伸缩性</strong>：如果要抗更高的并发，存储更多的数据，完全可以在集群里加入更多的Broker机器，这样就可以线性扩展集群了。</li>
+</ul>
+<p>所以，用多个Master Broker部署的方式，加上Topic分散在多台Broker上的机制，可以抗下高并发访问以及海量消息的分布式存储。每个Master Broker有两个Slave Broker结合Dledger技术可以实现故障时的自动Slave-Master切换，实现高可用性。</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>RocketMQ基础概念</title>
+    <url>/2019/11/27/RocketMQ%E5%9F%BA%E7%A1%80%E6%A6%82%E5%BF%B5/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章总结了RocketMQ几个核心的数据模型和消费方式。</p></div><a id="more"></a> 
+<h6 id="Topic"><a href="#Topic" class="headerlink" title="Topic"></a>Topic</h6><p>Topic可以理解为<strong>数据集合</strong>的意思，一般不同类型的数据会放到不同的topic中；</p>
+<p>要是有一些商品数据要发送消息到MQ里，可以创建一个Topic叫做“topic_goods_info”，代表里面都是商品数据，那些想要从MQ里使用商品数据的系统就可以订阅“topic_goods_info”这个topic。</p>
+<h6 id="Message"><a href="#Message" class="headerlink" title="Message"></a>Message</h6><p>Message（消息）就是要传输的信息。</p>
+<p>一条消息必须有一个Topic，也可以拥有一个可选的标签（Tag）和额处的键值对，它们可以用于设置一个业务 Key 并在Broker上查找此消息。</p>
+<h6 id="Tag"><a href="#Tag" class="headerlink" title="Tag"></a>Tag</h6><p>Tag（标签）可以看作子主题,它是消息的第二级类型，使用标签，同一业务模块不同目的的消息就可以用相同 Topic 而不同的 Tag 来标识。</p>
+<p>建议合理的规划Topic和里面的tags，一个Topic代表了一类业务消息数据，然后对于这类业务消息数据，如果希望继续划分一些类别的话，可以在发送消息的时候设置tags。</p>
+<p>比如现在常见的手机运营商有移动、联通、电信，那么假设你现在一个系统要发送话费充值数据到MQ里去，就可以针对性的设置tags，比如不同的订单数据都到一个“ChongZhiOrderTopic”里去。</p>
+<p>但是不同类型的运营商可以有不同的tags：“yidong_chongzhi”，“liantong_chongzhi”，“dianxin_chongzhi”。然后对消费“ChongZhiOrderTopic”的系统，可以根据tags来筛选，因为可能不同运行商的数据处理方式是不同的。</p>
+<h6 id="Group"><a href="#Group" class="headerlink" title="Group"></a>Group</h6><p>分组，一个组可以订阅多个Topic。</p>
+<p>分为ProducerGroup，ConsumerGroup，代表某一类的生产者和消费者，一般来说同一个服务的集群就可以作为Group，同一个Group一般来说发送和消费的消息都是一样的；</p>
+<h6 id="Message-Queue"><a href="#Message-Queue" class="headerlink" title="Message Queue"></a>Message Queue</h6><p>Message Queue（消息队列），主题被划分为一个或多个子主题，即消息队列。Topic可以RocketMQ可视化工作台里去创建，在里面就可以创建一个Topic出来，在创建Topic的时候需要指定一个很关键的参数，就是MessageQueue。</p>
+<p>它有以下特点：</p>
+<ul>
+<li>一个 Topic 下可以设置多个消息队列，发送消息时执行该消息的 Topic ，RocketMQ 会轮询该 Topic 下的所有队列将消息发出去。</li>
+<li>一个MessageQueue只能给一个消费者消费，一个消费者可以消费多个MessageQueue。</li>
+<li>MessageQueue本质上是一个数据分片的机制，假设Topic有1万条数据，然后Topic有4个MessageQueue，那么大致可以认为会在每个MessageQueue中放入2500条数据；当然这个不是绝对的，有可能有的MessageQueue的数据多，有的数据少，这个要根据消息写入MessageQueue的策略来定。</li>
+</ul>
+<h6 id="Offset"><a href="#Offset" class="headerlink" title="Offset"></a>Offset</h6><p>在RocketMQ 中，所有消息队列都是持久化，长度无限的数据结构，所谓长度无限是指队列中的每个存储单元都是定长，访问其中的存储单元使用Offset 来访问，Offset 为 java long 类型，64 位，理论上在 100年内不会溢出，所以认为是长度无限。<br>也可以认为 Message Queue 是一个长度无限的数组，Offset 就是下标。</p>
+<h6 id="消息发送方式"><a href="#消息发送方式" class="headerlink" title="消息发送方式"></a>消息发送方式</h6><ul>
+<li><p>同步发送消息，发送消息到MQ去，代码会卡住，不能往下走了;</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">SendResult sendResult = producer.send(msg);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>异步发送消息，消息发送出去，代码就直接往下走了，不会卡着等待MQ返回结果！然后当MQ返回结果的时候，Producer会回调SendCallback里的函数，如果发送成功了就回调onSuccess函数，如果发送失败了就回调onExceptino函数。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">producer.send(msg,new SendCallback()&#123;</span><br><span class="line">    @Override</span><br><span class="line">    public void onSuccess(SendResult result)&#123;&#125;</span><br><span class="line">    @Override</span><br><span class="line">    public void onException(Throwable e)&#123;&#125;</span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>单向发送消息，发送一个消息给MQ，然后代码就往下走了，根本不会关注MQ有没有返回结果给你，也不需要MQ返回的结果，无论发送的消息是成功还是失败，都无所谓。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">producer.sendOnWay(msg);</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h6 id="消息拉取方式"><a href="#消息拉取方式" class="headerlink" title="消息拉取方式"></a>消息拉取方式</h6><ul>
+<li><p>pull方式，Broker不会主动推送消息给Consumer，而是Consumer主动发送请求到Broker去拉取消息过来。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">    DefaultMQPullConsumer consumer = new DefaultMQPullConsumer(&quot;please_rename_unique_group_name_5&quot;);</span><br><span class="line">    consumer.setNamesrvAddr(&quot;127.0.0.1:9876&quot;);</span><br><span class="line">    consumer.start();</span><br><span class="line"></span><br><span class="line">    Set&lt;MessageQueue&gt; mqs = consumer.fetchSubscribeMessageQueues(&quot;TopicTest&quot;);</span><br><span class="line"></span><br><span class="line">    for (MessageQueue mq : mqs) &#123;</span><br><span class="line">        System.out.printf(&quot;Consume from the queue: %s%n&quot;, mq);</span><br><span class="line">        SINGLE_MQ:</span><br><span class="line">        while (true) &#123;</span><br><span class="line">	try &#123;</span><br><span class="line">	    // 拉取消息，arg1=消息队列，arg2=tag消息过滤，arg3=消息队列，arg4=一次最大拉去消息数量</span><br><span class="line">	    PullResult pullResult =</span><br><span class="line">		    consumer.pullBlockIfNotFound(mq, null, getMessageQueueOffset(mq), 32);</span><br><span class="line">	    System.out.printf(&quot;%s%n&quot;, pullResult);</span><br><span class="line">	    putMessageQueueOffset(mq, pullResult.getNextBeginOffset());</span><br><span class="line">	    switch (pullResult.getPullStatus()) &#123;</span><br><span class="line">		case FOUND:</span><br><span class="line">		    System.out.println(pullResult.getMsgFoundList().get(0));</span><br><span class="line">		    break;</span><br><span class="line">		case NO_MATCHED_MSG:</span><br><span class="line">		    System.out.println(&quot;无匹配消息&quot;);</span><br><span class="line">		    break;</span><br><span class="line">		case NO_NEW_MSG:</span><br><span class="line">		    System.out.println(&quot;没有新消息&quot;);</span><br><span class="line">		    break SINGLE_MQ; </span><br><span class="line">		case OFFSET_ILLEGAL: </span><br><span class="line">		    System.out.println(&quot;Offset不合法&quot;);</span><br><span class="line">		    break;</span><br><span class="line">		default:</span><br><span class="line">		    break;</span><br><span class="line">	    &#125;</span><br><span class="line">	&#125; catch (Exception e) &#123;</span><br><span class="line">	    e.printStackTrace();</span><br><span class="line">	&#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">consumer.shutdown();</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>push方式，就是Broker会主动把消息发送给Consumer，Consumer是被动的接收Broker推送给过来的消息，然后进行处理。</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">DefaultMQPushConsumer consumer = new DefaultMQPushConsumer(&quot;demo&quot;);</span><br><span class="line">     consumer.setConsumeFromWhere(ConsumeFromWhere.CONSUME_FROM_LAST_OFFSET);</span><br><span class="line">     consumer.subscribe(&quot;test_topic&quot;, &quot;*&quot;);</span><br><span class="line">     consumer.setNamesrvAddr(&quot;127.0.0.1:9876&quot;);</span><br><span class="line">     consumer.registerMessageListener(new MessageListenerConcurrently() &#123;</span><br><span class="line">            @Override</span><br><span class="line">            public ConsumeConcurrentlyStatus consumeMessage(List&lt;MessageExt&gt; msgs,</span><br><span class="line">                                                            ConsumeConcurrentlyContext context) &#123;</span><br><span class="line">                System.out.printf(&quot;%s Receive New Messages: %s %n&quot;, Thread.currentThread().getName(), msgs);</span><br><span class="line">                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;</span><br><span class="line">            &#125;</span><br><span class="line">     &#125;);</span><br><span class="line">consumer.start();</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<p>这两个消费模式本质是一样的，都是消费者机器主动发送请求到Broker机器去拉取一批消息下来。</p>
+<p>Push消费模式本质底层也是基于这种消费者主动拉取的模式来实现的，只不过名字叫做Push而已，意思是Broker会尽可能实时的把新消息交给消费者机器来进行处理，他的消息时效性会更好。</p>
+<p>一般使用RocketMQ的时候，消费模式通常都是基于Push模式来做的，因为Pull模式的代码写起来更加的复杂和繁琐，而且Push模式底层本身就是基于消息拉取的方式来做的，只不过时效性更好而已。</p>
+<h6 id="消息消费方式"><a href="#消息消费方式" class="headerlink" title="消息消费方式"></a>消息消费方式</h6><p>消息消费模式有两种：Clustering（集群消费）和Broadcasting（广播消费）。</p>
+<p>默认情况下是集群模式，这种模式下，一个消费组获取到一条消息，只会交给组内的一台机器去处理，如果某个消费者宕机，组内其他消费者会接替宕机的消费者继续消费。</p>
+<p>广播模式，对于消费组获取到的一条消息，组内每台机器都可以获取到这条消息。但是相对而言广播模式其实用的很少，常见基本上都是使用集群模式来进行消费的。</p>
+<p>以下代码可以修改集群模式为广播模式：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">consumer.setMessageModel(MessageModel.BROADCASTING);</span><br></pre></td></tr></table></figure></p>
+<h6 id="刷盘方式"><a href="#刷盘方式" class="headerlink" title="刷盘方式"></a>刷盘方式</h6><p>刷盘方式有两种：同步刷盘和异步刷盘。</p>
+<ul>
+<li>同步刷盘：消息发送出去后，等待消息写入磁盘，才会收到成功写入的返回，代码才会往下走;</li>
+<li>异步刷盘：消息发送出去后，不会等待消息进入到磁盘，代码就往下走了，通过回调才直到是否写入成功，消息发送到Broker后，先写入机器的os cache中，没有进入磁盘里，要过一会儿等操作系统自己把os cache里的数据实际刷入磁盘文件中去；</li>
+</ul>
+<p>所以在异步刷盘的模式下，写入消息的吞吐量是极高的，毕竟消息只要进入os cache就可以了，写消息的性能就是写内存的性能，但是这个情况下，可能会导致数据的丢失。</p>
+]]></content>
+      <categories>
+        <category>消息队列</category>
+      </categories>
+      <tags>
+        <tag>RocketMQ</tag>
+      </tags>
+  </entry>
+  <entry>
     <title>基于SpringCloud（Greenwich.SR2）搭建的微服务脚手架（适用于在线系统）</title>
     <url>/2019/11/24/%E5%9F%BA%E4%BA%8ESpringCloud%EF%BC%88Greenwich-SR2%EF%BC%89%E6%90%AD%E5%BB%BA%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%84%9A%E6%89%8B%E6%9E%B6%EF%BC%88%E9%80%82%E7%94%A8%E4%BA%8E%E5%9C%A8%E7%BA%BF%E7%B3%BB%E7%BB%9F%EF%BC%89/</url>
     <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章介绍博主自己搭建的脚手架开源项目。</p></div><a id="more"></a> 

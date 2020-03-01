@@ -1,0 +1,333 @@
+<!DOCTYPE html><html class="theme-next gemini use-motion" lang="zh-Hans"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#222"><script src="/lib/pace/pace.min.js?v=1.0.2"></script><link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"><link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css"><link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css"><link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4"><link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=5.1.4"><link rel="icon" type="image/png" sizes="16x16" href="/images/cat16.png?v=5.1.4"><link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222"><meta name="keywords" content="RocketMQ,"><meta name="description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息丢失问题出现的场景和解决方案。"><meta name="keywords" content="RocketMQ"><meta property="og:type" content="article"><meta property="og:title" content="RocketMQ消息丟失问题"><meta property="og:url" content="https://zhaibo.ink/2019/12/01/RocketMQ消息丟失问题/index.html"><meta property="og:site_name" content="阿宅的技术博客"><meta property="og:description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息丢失问题出现的场景和解决方案。"><meta property="og:locale" content="zh-Hans"><meta property="og:updated_time" content="2020-02-28T09:42:27.796Z"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="RocketMQ消息丟失问题"><meta name="twitter:description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息丢失问题出现的场景和解决方案。"><script type="text/javascript" id="hexo.configurations">var NexT=window.NexT||{},CONFIG={root:"/",scheme:"Gemini",version:"5.1.4",sidebar:{position:"left",display:"post",offset:10,b2t:!0,scrollpercent:!0,onmobile:!1},fancybox:!0,tabs:!0,motion:{enable:!0,async:!1,transition:{post_block:"fadeIn",post_header:"slideDownIn",post_body:"slideDownIn",coll_header:"slideLeftIn",sidebar:"slideUpIn"}},duoshuo:{userId:"0",author:"博主"},algolia:{applicationID:"",apiKey:"",indexName:"",hits:{per_page:10},labels:{input_placeholder:"Search for Posts",hits_empty:"We didn't find any results for the search: ${query}",hits_stats:"${hits} results found in ${time} ms"}}}</script><link rel="canonical" href="https://zhaibo.ink/2019/12/01/RocketMQ消息丟失问题/"><script>!function(e,t,o,c,i,a,n){e.DaoVoiceObject=i,e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},e[i].l=1*new Date,a=t.createElement(o),n=t.getElementsByTagName(o)[0],a.async=1,a.src=c,a.charset="utf-8",n.parentNode.insertBefore(a,n)}(window,document,"script",("https:"==document.location.protocol?"https:":"http:")+"//widget.daovoice.io/widget/0f81ff2f.js","daovoice"),daovoice("init",{app_id:"1b4551b7"}),daovoice("update")</script><title>RocketMQ消息丟失问题 | 阿宅的技术博客</title><script type="text/javascript">var _hmt=_hmt||[];!function(){var e=document.createElement("script");e.src="https://hm.baidu.com/hm.js?ce84efc6cd3d0e14408a4c868d25232a";var t=document.getElementsByTagName("script")[0];t.parentNode.insertBefore(e,t)}()</script></head><body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans"><div class="container sidebar-position-left page-post-detail"><div class="headband"></div> <a href="https://www.github.com/ZhaiBo" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewbox="0 0 250 250" style="fill:#151513;color:#fff;position:absolute;top:0;border:0;right:0" aria-hidden="true"><path d="M0 0 115 115 130 115 142 142 250 250 250 0Z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentColor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4L133.7 101.6C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8Z" fill="currentColor" class="octo-body"/></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style><header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="header-inner"><div class="site-brand-wrapper"><div class="site-meta"><div class="custom-logo-site-title"><a href="/" class="brand" rel="start"><span class="logo-line-before"><i></i></span> <span class="site-title">阿宅的技术博客</span><span class="logo-line-after"><i></i></span></a></div><h1 class="site-subtitle" itemprop="description">( ゜- ゜)つロ</h1></div><div class="site-nav-toggle"> <button><span class="btn-bar"></span><span class="btn-bar"></span><span class="btn-bar"></span></button></div></div><nav class="site-nav"><ul id="menu" class="menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i><br> 首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i><br> 标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i><br> 分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i><br> 归档</a></li><li class="menu-item menu-item-search"><a href="javascript:;" class="popup-trigger"><i class="menu-item-icon fa fa-search fa-fw"></i><br> 搜索</a></li></ul><div class="site-search"><div class="popup search-popup local-search-popup"><div class="local-search-header clearfix"><span class="search-icon"><i class="fa fa-search"></i></span><span class="popup-btn-close"><i class="fa fa-times-circle"></i></span><div class="local-search-input-wrapper"> <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input"></div></div><div id="local-search-result"></div></div></div></nav></div></header><main id="main" class="main"><div class="main-inner"><div class="content-wrap"><div id="content" class="content"><div id="posts" class="posts-expand"><article class="post post-type-normal" itemscope itemtype="http://schema.org/Article"><div class="post-block"><link itemprop="mainEntityOfPage" href="https://zhaibo.ink/2019/12/01/RocketMQ消息丟失问题/"><span hidden itemprop="author" itemscope itemtype="http://schema.org/Person"><meta itemprop="name" content="阿宅"><meta itemprop="description" content="我说所有的酒，都不如你。"><meta itemprop="image" content="/uploads/avatar.jpg"></span><span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization"><meta itemprop="name" content="阿宅的技术博客"></span><header class="post-header"><h2 class="post-title" itemprop="name headline">RocketMQ消息丟失问题</h2><div class="post-meta"><span class="post-time"><span class="post-meta-item-icon"><i class="fa fa-calendar-o"></i></span> <span class="post-meta-item-text">发表于</span> <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-01T17:05:01+08:00">2019-12-01</time></span> <span class="post-category"><span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-folder-o"></i></span> <span class="post-meta-item-text">分类于</span> <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/消息队列/" itemprop="url" rel="index"><span itemprop="name">消息队列</span></a></span></span> <span class="post-comments-count"><span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-comment-o"></i> <span>&nbsp;&nbsp;评论数:</span></span><a href="/2019/12/01/RocketMQ消息丟失问题/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/12/01/RocketMQ消息丟失问题/" itemprop="commentCount"></span></a></span> <span id="/2019/12/01/RocketMQ消息丟失问题/" class="leancloud_visitors" data-flag-title="RocketMQ消息丟失问题"><span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-eye"></i></span> <span class="post-meta-item-text">热度&#58;</span><span class="leancloud-visitors-count"></span> <span>℃</span></span><div class="post-wordcount"><span class="post-meta-item-icon"><i class="fa fa-file-word-o"></i></span> <span class="post-meta-item-text">字数统计&#58;</span> <span title="字数统计">1,565字</span> <span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i></span> <span class="post-meta-item-text">阅读时长 &asymp;</span> <span title="阅读时长">5分钟</span></div></div></header><div class="post-body" itemprop="articleBody"><div class="note primary"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息丢失问题出现的场景和解决方案。</p></div><a id="more"></a><p>RocketMQ出现消息丢失可能会在生产者系统、RocketMQ自身、消费者系统;</p><h5 id="生产者系统"><a href="#生产者系统" class="headerlink" title="生产者系统"></a>生产者系统</h5><h6 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h6><p>生产者在推送消息到RocketMQ的过程中，是通过网络去进行传输的，如果这个时候恰巧可能网络抖动，导致这次网络通信失败了。于是这个消息就不能成功投递给MQ；</p><p>即使MQ收到消息了，但是它的网络通信模块的代码出现了异常，也可能导致消息不能投递成功。</p><h6 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h6><p>真正要保证消息一定投递到MQ，同时保证业务系统之间的数据完全一致，<strong>业内最佳的方案还是用基于RocketMQ的事务消息机制</strong>。</p><p>他可以保证生产者系统的本地事务一旦成功，那么必然会投递消息到MQ去，保证业务系统的数据是一致的。而且整个流程中，不需要进行长时间的阻塞和重试。</p><p>但是事务消息的机制是很复杂的，会降低吞吐量；</p><h5 id="RocketMQ自身"><a href="#RocketMQ自身" class="headerlink" title="RocketMQ自身"></a>RocketMQ自身</h5><h6 id="出现场景-1"><a href="#出现场景-1" class="headerlink" title="出现场景"></a>出现场景</h6><p>假设现在生产者系统已经通过<strong>事务消息的机制</strong>，通过half消息 + commit的方式，让消息在MQ里提交了，但是现在对于MQ而言，消息还没有真正的写入磁盘，仅仅停留在os cache中；</p><p>如果此时这台机器突然宕机了，os cache中的数据就会丢失，此时必然会导致消息丢失。</p><p>就算消息已经进入磁盘文件了，但是消费者系统还没有消费这条消息，此时这台机器的磁盘突然就坏了，就会一样导致消息丢失。</p><h6 id="解决方案-1"><a href="#解决方案-1" class="headerlink" title="解决方案"></a>解决方案</h6><p>解决Broker消息丢失：<strong>异步刷盘调整为同步刷盘，通过主从架构模式避免磁盘故障导致的数据丢失</strong>。</p><p><strong>异步刷盘调整为同步刷盘</strong><br>如果一定要确保数据零丢失的话，可以调整MQ的刷盘策略，需要调整broker的配置文件，将其中的<code>flushDiskType</code>配置设置为：<code>SYNC_FLUSH</code>，默认值是<code>ASYNC_FLUSH</code>，即默认是异步刷盘的。</p><p>如果调整为同步刷盘之后，写入MQ的每条消息，只要MQ通知写入成功了，那么消息就已经进入了磁盘文件了;</p><p><strong>主从架构模式避免磁盘故障导致的数据丢失</strong><br>必须让一个Master Broker有一个Slave Broker去同步它的数据，而且一条消息写入成功，必须要让Slave Broker也写入成功，保证数据有多个副本的冗余。</p><p>这样一来，一条消息但凡写入成功了，那就一定会通过Raft协议同步给其他的Broker机器。此时主从两个Broker上都有这条数据了，此时如果Master Broker的磁盘坏了，但是Slave Broker上至少还是有数据的，数据是不会因为磁盘故障而丢失的。</p><h5 id="消费者系统"><a href="#消费者系统" class="headerlink" title="消费者系统"></a>消费者系统</h5><h6 id="出现场景-2"><a href="#出现场景-2" class="headerlink" title="出现场景"></a>出现场景</h6><p>如果消费者系统拿到了某条消息，但是消息目前还在消费者的内存里，还没执行真正的业务逻辑，此时如果直接提交了这条消息的offset到broker去说这条消息已经处理过了；</p><p>接着消费者系统直接崩溃了，内存里的消息就丢失了，但是Broker其实已经收到提交的消息offset了，还以为消费者已经处理完这条消息了，等消费者系统重启的时候，就不会再次消费这条消息了。</p><h6 id="解决方案-2"><a href="#解决方案-2" class="headerlink" title="解决方案"></a>解决方案</h6><p>解决消费者消息丢失：<strong>手动提交offset + 自动故障转移</strong>;</p><p><strong>手动提交offset</strong><br>在默认的Consumer的消费模式之下，<strong>RocketMQ不会出现自动提交offset这种问题</strong>，RocketMQ的消费者中会注册一个监听器，当消费者获取到一批消息之后，就会回调这个监听器函数，让消费者来处理这一批消息。</p><p>当消费者处理完这一批消息了，才会返回<code>ConsumeConcurrentlyStatus.CONSUME_SUCCESS</code>这个状态标识消息都处理结束了，去提交offset到broker去。就算此时消费者系统崩溃了，也是不会丢失消息的。</p><p><strong>自动故障转移</strong><br>如果消费者系统获取到一批消息之后，还没处理完，也就不会返回<code>ConsumeConcurrentlyStatus.CONSUME_SUCCESS</code>这个状态，就不会提交这批消息的offset给broker，如果此时消费者系统突然挂了，broker是不会认为这批消息被处理完了，它其实会感知到消费者系统的一台机器宕机了。</p><p>接着它会把消费者没处理完的那批消息交给消费者系统的其他机器去进行处理，所以在这种情况下，消息也绝对是不会丢失的。</p><h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>一般不要轻易在随便一个业务里就上如此重的一套方案，要明白用了这套方案之后，会让整个从头到尾的消息流转链路的性能大幅度下降，让MQ的吞吐量大幅度的下降，比如本身系统和MQ配合起来，每秒可以处理几万条消息的，结果落地消息零丢失方案之后，可能每秒只能处理几千条消息了。</p><ul><li>一般建议，对于跟金钱、交易以及核心数据相关的系统和核心链路，可以使用这套消息零丢失方案。比如支付、订单系统，性能可以低一点，但是不能让支付记录丢失；</li><li>而对于其他没那么核心的场景和系统，其实即使丢失一些数据，也不会导致太大的问题，此时可以不采取这些方案，或者可以退化成<strong>同步发送消息 + 反复重试几次</strong>的方案，如果发送消息失败，就重试几次，但是大部分时候可能不需要重试，那么也不会轻易的丢失消息的！最多在这个方案里，可能会出现一些数据不一致的问题。</li></ul></div><div><div><div style="text-align:center;color:#848484;font-size:14px"> -------------本文结束(๑•ᴗ•๑)感谢您的阅读-------------</div></div></div><footer class="post-footer"><div class="post-tags"><a href="/tags/RocketMQ/" rel="tag"><i class="fa fa-tag"></i> RocketMQ</a></div><div class="post-nav"><div class="post-nav-next post-nav-item"><a href="/2019/11/30/RocketMQ生产集群方案/" rel="next" title="RocketMQ生产集群方案"><i class="fa fa-chevron-left"></i> RocketMQ生产集群方案</a></div><span class="post-nav-divider"></span><div class="post-nav-prev post-nav-item"> <a href="/2019/12/06/RocketMQ消息重复问题/" rel="prev" title="RocketMQ消息重复问题">RocketMQ消息重复问题<i class="fa fa-chevron-right"></i></a></div></div></footer></div></article><div class="post-spread"></div></div></div><div class="comments" id="comments"><div id="disqus_thread"><noscript> Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div></div></div><div class="sidebar-toggle"><div class="sidebar-toggle-line-wrap"><span class="sidebar-toggle-line sidebar-toggle-line-first"></span><span class="sidebar-toggle-line sidebar-toggle-line-middle"></span><span class="sidebar-toggle-line sidebar-toggle-line-last"></span></div></div><aside id="sidebar" class="sidebar"><div class="sidebar-inner"><ul class="sidebar-nav motion-element"><li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap"> 文章目录</li><li class="sidebar-nav-overview" data-target="site-overview-wrap"> 站点概览</li></ul><section class="site-overview-wrap sidebar-panel"><div class="site-overview"><div class="site-author motion-element" itemprop="author" itemscope itemtype="https://schema.org/Person"> <img class="site-author-image" itemprop="image" src="/uploads/avatar.jpg" alt="阿宅"><p class="site-author-name" itemprop="name">阿宅</p><p class="site-description motion-element" itemprop="description">我说所有的酒，都不如你。</p></div><nav class="site-state motion-element"><div class="site-state-item site-state-posts"> <a href="/archives/"><span class="site-state-item-count">35</span> <span class="site-state-item-name">日志</span></a></div><div class="site-state-item site-state-categories"> <a href="/categories/index.html"><span class="site-state-item-count">10</span> <span class="site-state-item-name">分类</span></a></div><div class="site-state-item site-state-tags"> <a href="/tags/index.html"><span class="site-state-item-count">13</span> <span class="site-state-item-name">标签</span></a></div></nav><div class="links-of-author motion-element"><span class="links-of-author-item"><a href="https://github.com/ZhaiBo" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i> GitHub</a></span><span class="links-of-author-item"><a href="mailto:729963917@qq.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i> E-Mail</a></span><span class="links-of-author-item"><a href="https://www.jianshu.com/u/304044cdb4e6" target="_blank" title="JianShu"><i class="fa fa-fw fa-heartbeat"></i> JianShu</a></span><span class="links-of-author-item"><a href="https://blog.csdn.net/qq_29635485" target="_blank" title="CSDN"><i class="fa fa-fw fa-codepen"></i> CSDN</a></span> <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="360" height="86" src="https://music.163.com/outchain/player?type=2&id=26447698&auto=0&height=66"></iframe></div></div></section><section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active"><div class="post-toc"><div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#生产者系统"><span class="nav-number">1.</span> <span class="nav-text">生产者系统</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#出现场景"><span class="nav-number">1.1.</span> <span class="nav-text">出现场景</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#解决方案"><span class="nav-number">1.2.</span> <span class="nav-text">解决方案</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#RocketMQ自身"><span class="nav-number">2.</span> <span class="nav-text">RocketMQ自身</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#出现场景-1"><span class="nav-number">2.1.</span> <span class="nav-text">出现场景</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#解决方案-1"><span class="nav-number">2.2.</span> <span class="nav-text">解决方案</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#消费者系统"><span class="nav-number">3.</span> <span class="nav-text">消费者系统</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#出现场景-2"><span class="nav-number">3.1.</span> <span class="nav-text">出现场景</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#解决方案-2"><span class="nav-number">3.2.</span> <span class="nav-text">解决方案</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#总结"><span class="nav-number">4.</span> <span class="nav-text">总结</span></a></li></ol></div></div></section><div class="back-to-top"><i class="fa fa-arrow-up"></i> <span id="scrollpercent"><span>0</span>%</span></div></div></aside></div></main><footer id="footer" class="footer"><div class="footer-inner"><div class="copyright">&copy; <span itemprop="copyrightYear">2020</span><span class="with-love"><i class="fa fa-heart"></i></span> <span class="author" itemprop="copyrightHolder">阿宅</span> <span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-area-chart"></i></span> <span class="post-meta-item-text">全站字数统计&#58;</span> <span title="全站字数统计">28.1k</span></div><div class="busuanzi-count"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span class="site-pv"><i class="fa fa-eye"></i> &nbsp;&nbsp;嗨！小站共被<span class="busuanzi-value" id="busuanzi_value_site_pv"></span> 位小伙伴访问过.</span></div></div></footer></div><script type="text/javascript">"[object Function]"!==Object.prototype.toString.call(window.Promise)&&(window.Promise=null)</script><script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script><script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script><script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script><script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script><script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script><script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script><script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script><script type="text/javascript">var disqus_config=function(){this.page.url="https://zhaibo.ink/2019/12/01/RocketMQ消息丟失问题/",this.page.identifier="2019/12/01/RocketMQ消息丟失问题/",this.page.title="RocketMQ消息丟失问题"},d=document,s=d.createElement("script");s.src="https://.disqus.com/embed.js",s.setAttribute("data-timestamp",""+ +new Date),(d.head||d.body).appendChild(s)</script><script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="//unpkg.com/valine/dist/Valine.min.js"></script><script type="text/javascript">
+    var GUEST = ['nick','mail','link'];
+    var guest = 'nick,mail';
+    guest = guest.split(',').filter(item=>{
+      return GUEST.indexOf(item)>-1;
+    });
+    new Valine({
+        el: '#comments' ,
+        verify: false,
+        notify: false,
+        appId: 'nCfTieRdccNd2GFjUo5Yq37l-gzGzoHsz',
+        appKey: '9tN6ELAz0WGLq7LIOehYmIN2',
+        placeholder: '(*^__^*) ，来呀,快活呀...',
+        avatar:'mm',
+        guest_info:guest,
+        pageSize:'10' || 10,
+    });
+  </script><script type="text/javascript">
+    // Popup Window;
+    var isfetched = false;
+    var isXml = true;
+    // Search DB path;
+    var search_path = "search.xml";
+    if (search_path.length === 0) {
+      search_path = "search.xml";
+    } else if (/json$/i.test(search_path)) {
+      isXml = false;
+    }
+    var path = "/" + search_path;
+    // monitor main search box;
+
+    var onPopupClose = function (e) {
+      $('.popup').hide();
+      $('#local-search-input').val('');
+      $('.search-result-list').remove();
+      $('#no-result').remove();
+      $(".local-search-pop-overlay").remove();
+      $('body').css('overflow', '');
+    }
+
+    function proceedsearch() {
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay"></div>')
+        .css('overflow', 'hidden');
+      $('.search-popup-overlay').click(onPopupClose);
+      $('.popup').toggle();
+      var $localSearchInput = $('#local-search-input');
+      $localSearchInput.attr("autocapitalize", "none");
+      $localSearchInput.attr("autocorrect", "off");
+      $localSearchInput.focus();
+    }
+
+    // search function;
+    var searchFunc = function(path, search_id, content_id) {
+      'use strict';
+
+      // start loading animation
+      $("body")
+        .append('<div class="search-popup-overlay local-search-pop-overlay">' +
+          '<div id="search-loading-icon">' +
+          '<i class="fa fa-spinner fa-pulse fa-5x fa-fw"></i>' +
+          '</div>' +
+          '</div>')
+        .css('overflow', 'hidden');
+      $("#search-loading-icon").css('margin', '20% auto 0 auto').css('text-align', 'center');
+
+      $.ajax({
+        url: path,
+        dataType: isXml ? "xml" : "json",
+        async: true,
+        success: function(res) {
+          // get the contents from search data
+          isfetched = true;
+          $('.popup').detach().appendTo('.header-inner');
+          var datas = isXml ? $("entry", res).map(function() {
+            return {
+              title: $("title", this).text(),
+              content: $("content",this).text(),
+              url: $("url" , this).text()
+            };
+          }).get() : res;
+          var input = document.getElementById(search_id);
+          var resultContent = document.getElementById(content_id);
+          var inputEventFunction = function() {
+            var searchText = input.value.trim().toLowerCase();
+            var keywords = searchText.split(/[\s\-]+/);
+            if (keywords.length > 1) {
+              keywords.push(searchText);
+            }
+            var resultItems = [];
+            if (searchText.length > 0) {
+              // perform local searching
+              datas.forEach(function(data) {
+                var isMatch = false;
+                var hitCount = 0;
+                var searchTextCount = 0;
+                var title = data.title.trim();
+                var titleInLowerCase = title.toLowerCase();
+                var content = data.content.trim().replace(/<[^>]+>/g,"");
+                var contentInLowerCase = content.toLowerCase();
+                var articleUrl = decodeURIComponent(data.url);
+                var indexOfTitle = [];
+                var indexOfContent = [];
+                // only match articles with not empty titles
+                if(title != '') {
+                  keywords.forEach(function(keyword) {
+                    function getIndexByWord(word, text, caseSensitive) {
+                      var wordLen = word.length;
+                      if (wordLen === 0) {
+                        return [];
+                      }
+                      var startPosition = 0, position = [], index = [];
+                      if (!caseSensitive) {
+                        text = text.toLowerCase();
+                        word = word.toLowerCase();
+                      }
+                      while ((position = text.indexOf(word, startPosition)) > -1) {
+                        index.push({position: position, word: word});
+                        startPosition = position + wordLen;
+                      }
+                      return index;
+                    }
+
+                    indexOfTitle = indexOfTitle.concat(getIndexByWord(keyword, titleInLowerCase, false));
+                    indexOfContent = indexOfContent.concat(getIndexByWord(keyword, contentInLowerCase, false));
+                  });
+                  if (indexOfTitle.length > 0 || indexOfContent.length > 0) {
+                    isMatch = true;
+                    hitCount = indexOfTitle.length + indexOfContent.length;
+                  }
+                }
+
+                // show search results
+
+                if (isMatch) {
+                  // sort index by position of keyword
+
+                  [indexOfTitle, indexOfContent].forEach(function (index) {
+                    index.sort(function (itemLeft, itemRight) {
+                      if (itemRight.position !== itemLeft.position) {
+                        return itemRight.position - itemLeft.position;
+                      } else {
+                        return itemLeft.word.length - itemRight.word.length;
+                      }
+                    });
+                  });
+
+                  // merge hits into slices
+
+                  function mergeIntoSlice(text, start, end, index) {
+                    var item = index[index.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    var hits = [];
+                    var searchTextCountInSlice = 0;
+                    while (position + word.length <= end && index.length != 0) {
+                      if (word === searchText) {
+                        searchTextCountInSlice++;
+                      }
+                      hits.push({position: position, length: word.length});
+                      var wordEnd = position + word.length;
+
+                      // move to next position of hit
+
+                      index.pop();
+                      while (index.length != 0) {
+                        item = index[index.length - 1];
+                        position = item.position;
+                        word = item.word;
+                        if (wordEnd > position) {
+                          index.pop();
+                        } else {
+                          break;
+                        }
+                      }
+                    }
+                    searchTextCount += searchTextCountInSlice;
+                    return {
+                      hits: hits,
+                      start: start,
+                      end: end,
+                      searchTextCount: searchTextCountInSlice
+                    };
+                  }
+
+                  var slicesOfTitle = [];
+                  if (indexOfTitle.length != 0) {
+                    slicesOfTitle.push(mergeIntoSlice(title, 0, title.length, indexOfTitle));
+                  }
+
+                  var slicesOfContent = [];
+                  while (indexOfContent.length != 0) {
+                    var item = indexOfContent[indexOfContent.length - 1];
+                    var position = item.position;
+                    var word = item.word;
+                    // cut out 100 characters
+                    var start = position - 20;
+                    var end = position + 80;
+                    if(start < 0){
+                      start = 0;
+                    }
+                    if (end < position + word.length) {
+                      end = position + word.length;
+                    }
+                    if(end > content.length){
+                      end = content.length;
+                    }
+                    slicesOfContent.push(mergeIntoSlice(content, start, end, indexOfContent));
+                  }
+
+                  // sort slices in content by search text's count and hits' count
+
+                  slicesOfContent.sort(function (sliceLeft, sliceRight) {
+                    if (sliceLeft.searchTextCount !== sliceRight.searchTextCount) {
+                      return sliceRight.searchTextCount - sliceLeft.searchTextCount;
+                    } else if (sliceLeft.hits.length !== sliceRight.hits.length) {
+                      return sliceRight.hits.length - sliceLeft.hits.length;
+                    } else {
+                      return sliceLeft.start - sliceRight.start;
+                    }
+                  });
+
+                  // select top N slices in content
+
+                  var upperBound = parseInt('1');
+                  if (upperBound >= 0) {
+                    slicesOfContent = slicesOfContent.slice(0, upperBound);
+                  }
+
+                  // highlight title and content
+
+                  function highlightKeyword(text, slice) {
+                    var result = '';
+                    var prevEnd = slice.start;
+                    slice.hits.forEach(function (hit) {
+                      result += text.substring(prevEnd, hit.position);
+                      var end = hit.position + hit.length;
+                      result += '<b class="search-keyword">' + text.substring(hit.position, end) + '</b>';
+                      prevEnd = end;
+                    });
+                    result += text.substring(prevEnd, slice.end);
+                    return result;
+                  }
+
+                  var resultItem = '';
+
+                  if (slicesOfTitle.length != 0) {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + highlightKeyword(title, slicesOfTitle[0]) + "</a>";
+                  } else {
+                    resultItem += "<li><a href='" + articleUrl + "' class='search-result-title'>" + title + "</a>";
+                  }
+
+                  slicesOfContent.forEach(function (slice) {
+                    resultItem += "<a href='" + articleUrl + "'>" +
+                      "<p class=\"search-result\">" + highlightKeyword(content, slice) +
+                      "...</p>" + "</a>";
+                  });
+
+                  resultItem += "</li>";
+                  resultItems.push({
+                    item: resultItem,
+                    searchTextCount: searchTextCount,
+                    hitCount: hitCount,
+                    id: resultItems.length
+                  });
+                }
+              })
+            };
+            if (keywords.length === 1 && keywords[0] === "") {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-search fa-5x" /></div>'
+            } else if (resultItems.length === 0) {
+              resultContent.innerHTML = '<div id="no-result"><i class="fa fa-frown-o fa-5x" /></div>'
+            } else {
+              resultItems.sort(function (resultLeft, resultRight) {
+                if (resultLeft.searchTextCount !== resultRight.searchTextCount) {
+                  return resultRight.searchTextCount - resultLeft.searchTextCount;
+                } else if (resultLeft.hitCount !== resultRight.hitCount) {
+                  return resultRight.hitCount - resultLeft.hitCount;
+                } else {
+                  return resultRight.id - resultLeft.id;
+                }
+              });
+              var searchResultList = '<ul class=\"search-result-list\">';
+              resultItems.forEach(function (result) {
+                searchResultList += result.item;
+              })
+              searchResultList += "</ul>";
+              resultContent.innerHTML = searchResultList;
+            }
+          }
+
+          if ('auto' === 'auto') {
+            input.addEventListener('input', inputEventFunction);
+          } else {
+            $('.search-icon').click(inputEventFunction);
+            input.addEventListener('keypress', function (event) {
+              if (event.keyCode === 13) {
+                inputEventFunction();
+              }
+            });
+          }
+
+          // remove loading animation
+          $(".local-search-pop-overlay").remove();
+          $('body').css('overflow', '');
+
+          proceedsearch();
+        }
+      });
+    }
+
+    // handle and trigger popup window;
+    $('.popup-trigger').click(function(e) {
+      e.stopPropagation();
+      if (isfetched === false) {
+        searchFunc(path, 'local-search-input', 'local-search-result');
+      } else {
+        proceedsearch();
+      };
+    });
+
+    $('.popup-btn-close').click(onPopupClose);
+    $('.popup').click(function(e){
+      e.stopPropagation();
+    });
+    $(document).on('keyup', function (event) {
+      var shouldDismissSearchPopup = event.which === 27 &&
+        $('.search-popup').is(':visible');
+      if (shouldDismissSearchPopup) {
+        onPopupClose();
+      }
+    });
+  </script><script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script><script>AV.initialize("nCfTieRdccNd2GFjUo5Yq37l-gzGzoHsz","d3NWCxjsQUaGQJIVpc49yLXB")</script><script>function showTime(e){var t=new AV.Query(e),c=[],u=$(".leancloud_visitors");u.each(function(){c.push($(this).attr("id").trim())}),t.containedIn("url",c),t.find().done(function(e){var t=".leancloud-visitors-count";if(0!==e.length){for(var n=0;n<e.length;n++){var o=e[n],i=o.get("url"),s=o.get("time"),r=document.getElementById(i);$(r).find(t).text(s)}for(n=0;n<c.length;n++){i=c[n],r=document.getElementById(i);var l=$(r).find(t);""==l.text()&&l.text(0)}}else u.find(t).text(0)}).fail(function(e,t){console.log("Error: "+t.code+" "+t.message)})}function addCount(i){var e=$(".leancloud_visitors"),s=e.attr("id").trim(),r=e.attr("data-flag-title").trim(),t=new AV.Query(i);t.equalTo("url",s),t.find({success:function(e){if(0<e.length){var t=e[0];t.fetchWhenSave(!0),t.increment("time"),t.save(null,{success:function(e){$(document.getElementById(s)).find(".leancloud-visitors-count").text(e.get("time"))},error:function(e,t){console.log("Failed to save Visitor num, with error message: "+t.message)}})}else{var n=new i,o=new AV.ACL;o.setPublicReadAccess(!0),o.setPublicWriteAccess(!0),n.setACL(o),n.set("title",r),n.set("url",s),n.set("time",1),n.save(null,{success:function(e){$(document.getElementById(s)).find(".leancloud-visitors-count").text(e.get("time"))},error:function(e,t){console.log("Failed to create")}})}},error:function(e){console.log("Error:"+e.code+" "+e.message)}})}$(function(){var e=AV.Object.extend("Counter");1==$(".leancloud_visitors").length?addCount(e):1<$(".post-title-link").length&&showTime(e)})</script><script>!function(){var t=document.createElement("script"),e=window.location.protocol.split(":")[0];t.src="https"===e?"https://zz.bdstatic.com/linksubmit/push.js":"http://push.zhanzhang.baidu.com/push.js";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}()</script></body></html><script type="text/javascript" src="/js/src/love.js"></script>
