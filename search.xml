@@ -1,6 +1,360 @@
 <?xml version="1.0" encoding="utf-8"?>
 <search>
   <entry>
+    <title>Eureka生产参数优化</title>
+    <url>/2020/02/10/Eureka%E7%94%9F%E4%BA%A7%E5%8F%82%E6%95%B0%E4%BC%98%E5%8C%96/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章总结了Eureka生产常用的几个参数。</p></div><a id="more"></a> 
+<h6 id="Eureka一些常用参数的默认值"><a href="#Eureka一些常用参数的默认值" class="headerlink" title="Eureka一些常用参数的默认值"></a>Eureka一些常用参数的默认值</h6><ul>
+<li><code>eureka.client.registry-fetch-interval-seconds = 30000</code>，表示eureka client间隔多久去拉取服务注册信息，默认为30秒；</li>
+<li><code>eureka.server.response-cache-update-interval-ms = 30000</code>，server刷新readCacheMap的时间，由于client读取的是readCacheMap，这个时间决定了多久会把readWriteCacheMap的缓存更新到readCacheMap上；</li>
+<li><code>eureka.client.lease-renewal-interval-in-seconds = 30</code>，表示eureka client发送心跳给server端的频率，默认30秒；</li>
+<li><code>eureka.server.evictionIntervalTimerInMs = 60000</code>，eureka server清理无效节点的时间间隔，默认60秒；</li>
+<li><code>eureka.instance.lease-expiration-duration-in-seconds = 90</code>，表示eureka server至上一次收到client的心跳之后，等待下一次心跳的超时时间，在这个时间内若没收到下一次心跳，则将移除该instance；</li>
+<li><code>eureka.server.enable-self-preservation = true</code>，是否开启自我保护模式，默认为true，默认情况下，如果Eureka Server在一定时间内没有接收到某个微服务实例的心跳，Eureka Server将会注销该实例（默认90秒），但是当网络分区故障发生时，微服务与Eureka Server之间无法正常通信，以上行为可能变得非常危险了——因为微服务本身其实是健康的，此时本不应该注销这个微服务。Eureka通过“自我保护模式”来解决这个问题——当Eureka Server节点在短时间内丢失过多客户端时（可能发生了网络分区故障），那么这个节点就会进入自我保护模式。一旦进入该模式，Eureka Server就会保护服务注册表中的信息，不再删除服务注册表中的数据（也就是不会注销任何微服务）。当网络故障恢复后，该Eureka Server节点会自动退出自我保护模式，使用自我保护模式，可以让Eureka集群更加的健壮、稳定。</li>
+</ul>
+<h6 id="优化"><a href="#优化" class="headerlink" title="优化"></a>优化</h6><p>从上面可以看出Eureka参数的默认值是非常不合理的，比如说心跳频率<code>eureka.client.lease-renewal-interval-in-seconds</code>和心跳超时时间<code>eureka.instance.lease-expiration-duration-in-seconds</code>都设置过长，基于Eureka的默认参数，做一个最差情况的计算；</p>
+<p>假设一个服务实例刚发送完心跳检测就挂了，等待90秒心跳超时认为服务实例挂了，此时移除服务实例，然后30秒后eureka server更新readCacheMap，eureka cllent最长需要30秒拉去最新的注册服务列表；</p>
+<p>那么最差的情况下：一个服务实例宕机被其它服务感知到最长需要：<code>90 + 30 + 30 = 150秒</code>；</p>
+<p>那么这两分多钟内发送该服务实例的请求都会处理失败，此时就会根据重试机制去调用集群内其他服务，为了更快的进行失败重试，在生产环境下建议根据服务情况将这几个参数的值设置的更短一些；</p>
+<p>让服务发现的时效性变成秒级，几秒钟就可以感知服务的上线和下线</p>
+<p>下面给出优化过的参数：<br>eureka client<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">eureka:</span><br><span class="line">  client:</span><br><span class="line">    # 刷新本地缓存时间为5秒</span><br><span class="line">    registryFetchIntervalSeconds: 5</span><br><span class="line">ribbon:</span><br><span class="line">  # eureka客户端ribbon刷新时间为5秒</span><br><span class="line">  ServerListRefreshInterval: 5000</span><br></pre></td></tr></table></figure></p>
+<p>eureka server<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">eureka:</span><br><span class="line">  server:</span><br><span class="line">    # 每次主动失效检测间隔改为5s.</span><br><span class="line">    eviction-interval-timer-in-ms: 5000</span><br><span class="line">    # 注册服务列表缓存更新频率改为5秒</span><br><span class="line">    response-cache-update-interval-ms: 5000</span><br><span class="line">  instance:</span><br><span class="line">    # 心跳超时时间为15秒</span><br><span class="line">    lease-expiration-duration-in-seconds: 15</span><br><span class="line">    # 心跳频率改为5秒</span><br><span class="line">    lease-renewal-interval-in-seconds: 5</span><br></pre></td></tr></table></figure></p>
+<p>注意：这些参数在服务实例数量巨大的情况下会对eureka本身造成巨大的压力，所以一定要根据线上服务情况设置相应的参数；</p>
+]]></content>
+      <tags>
+        <tag>SpringCloud</tag>
+        <tag>Eureka</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>基于SpringCloud（Greenwich.SR2）搭建的微服务脚手架（适用于在线系统）</title>
+    <url>/2020/02/04/%E5%9F%BA%E4%BA%8ESpringCloud%EF%BC%88Greenwich-SR2%EF%BC%89%E6%90%AD%E5%BB%BA%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%84%9A%E6%89%8B%E6%9E%B6%EF%BC%88%E9%80%82%E7%94%A8%E4%BA%8E%E5%9C%A8%E7%BA%BF%E7%B3%BB%E7%BB%9F%EF%BC%89/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章介绍博主自己搭建的脚手架开源项目。</p></div><a id="more"></a> 
+<p>项目代码已上传至github：<br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<h2 id="microservice-scaffold"><a href="#microservice-scaffold" class="headerlink" title="microservice-scaffold"></a>microservice-scaffold</h2><p>基于Spring Cloud（Greenwich.SR2）搭建的微服务脚手架，已集成注册中心（Nacos Config）、配置中心（Nacos Discovery）、认证授权（Oauth2 + JWT）、日志处理（ELK + Kafka）、限流熔断（AliBaba Sentinel）、应用指标监控（Prometheus + Grafana）、调用链监控（Pinpoint）、以及Spring Boot Admin。</p>
+<h2 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h2><p>依赖环境：</p>
+<ul>
+<li><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="noopener">java8</a> </li>
+<li><a href="https://www.docker.com/" target="_blank" rel="noopener">docker</a> </li>
+<li><a href="https://git-scm.com/" target="_blank" rel="noopener">git</a></li>
+<li><a href="http://maven.apache.org/" target="_blank" rel="noopener">maven</a> </li>
+</ul>
+<h3 id="基础环境搭建"><a href="#基础环境搭建" class="headerlink" title="基础环境搭建"></a>基础环境搭建</h3><h4 id="nacos"><a href="#nacos" class="headerlink" title="nacos"></a>nacos</h4><p>当前应用配置文件在config/example下，需要导入到nacos中，<a href="https://editor.csdn.net/md/?articleId=103337840" target="_blank" rel="noopener">nacos官方文档</a></p>
+<h4 id="elk-kafka"><a href="#elk-kafka" class="headerlink" title="elk + kafka"></a>elk + kafka</h4><p>进入config/docker-env/kafka-docker目录下，执行：<code>docker-compose up -d</code>；进入config/docker-env/docker-elk目录下，执行：<code>docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=102717007" target="_blank" rel="noopener">Spring Cloud日志集中化处理：ELK + Kafka</a></p>
+<h4 id="prometheus-grafana"><a href="#prometheus-grafana" class="headerlink" title="prometheus + grafana"></a>prometheus + grafana</h4><p>进入config/docker-env/prometheus目录下，执行：<code>docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=103337840" target="_blank" rel="noopener">Spring Cloud应用指标监控：Prometheus + Grafana</a></p>
+<h4 id="pinpoint"><a href="#pinpoint" class="headerlink" title="pinpoint"></a>pinpoint</h4><p>进入config/docker-env/prometheus目录下，执行：<code>docker-compose pull &amp;&amp; docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=103335777" target="_blank" rel="noopener">Spring Cloud链路追踪：Pinpoint</a></p>
+<h3 id="创建数据库及表"><a href="#创建数据库及表" class="headerlink" title="创建数据库及表"></a>创建数据库及表</h3><p>导入根路径db/目录下各模块下数据库脚本，可创建一个库或者分模块创建。</p>
+<h3 id="启动应用"><a href="#启动应用" class="headerlink" title="启动应用"></a>启动应用</h3><p>将工程导入idea，逐个启动SpringBoot应用即可。所依赖的基础服务如下：</p>
+<table>
+<thead>
+<tr>
+<th>基础服务</th>
+<th>服务名</th>
+<th>端口</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KV缓存</td>
+<td>redis</td>
+<td>6379</td>
+<td>目前用于存储JWT生成的access_token</td>
+</tr>
+<tr>
+<td>数据库</td>
+<td>mysql</td>
+<td>3306</td>
+<td></td>
+</tr>
+<tr>
+<td>消息中间件</td>
+<td>kafka</td>
+<td>9092</td>
+<td>与ELK集成</td>
+</tr>
+<tr>
+<td>注册与配置中心</td>
+<td>nacos</td>
+<td>8848</td>
+<td></td>
+</tr>
+<tr>
+<td>日志处理</td>
+<td>elk</td>
+<td>es:9200,kibana:5601,logstash:5000</td>
+<td></td>
+</tr>
+<tr>
+<td>应用指标监控</td>
+<td>prometheus</td>
+<td>9090</td>
+<td>共用</td>
+</tr>
+<tr>
+<td>数据可视化工具</td>
+<td>grafana</td>
+<td>3000</td>
+<td></td>
+</tr>
+<tr>
+<td>调用链路监控</td>
+<td>pinpoint</td>
+<td>8079</td>
+<td></td>
+</tr>
+<tr>
+<td>spring boot admin</td>
+<td>pinpoint</td>
+<td>8100</td>
+<td></td>
+</tr>
+<tr>
+<td>限流熔断</td>
+<td>alibaba sentinel</td>
+<td>8858</td>
+</tr>
+</tbody>
+</table>
+<p>各模块依赖服务：</p>
+<table>
+<thead>
+<tr>
+<th>服务名称</th>
+<th>说明</th>
+<th>依赖</th>
+<th>服务端口</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>auth</td>
+<td>认证服务器</td>
+<td>mysql、redis</td>
+<td>8190</td>
+</tr>
+<tr>
+<td>api-gateway</td>
+<td>api网关</td>
+<td>redis</td>
+<td>8088</td>
+</tr>
+<tr>
+<td>web-app</td>
+<td>服务聚合层</td>
+<td>alibaba sentinel</td>
+<td>8087</td>
+</tr>
+<tr>
+<td>user-svc</td>
+<td>用户服务</td>
+<td>mysql</td>
+<td>8000</td>
+</tr>
+<tr>
+<td>springboot admin</td>
+<td>应用监控</td>
+<td></td>
+<td>8100</td>
+</tr>
+</tbody>
+</table>
+<p>目前，仅完成基础框架搭建和统一报文、统一异常处理，暂未确定做什么业务。</p>
+]]></content>
+      <categories>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>SpringCloud</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SpringCloud链路追踪：Pinpoint</title>
+    <url>/2020/01/30/SpringCloud%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%EF%BC%9APinpoint/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章演示使用Pinpoint做SpringCloud链路追踪。</p></div><a id="more"></a> 
+<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a><br><strong>Pinpoint 1.8.5文档：</strong><br><a href="https://naver.github.io/pinpoint/1.8.5/docker.html" target="_blank" rel="noopener">https://naver.github.io/pinpoint/1.8.5/docker.html</a></p>
+<h5 id="安装Pinpoint"><a href="#安装Pinpoint" class="headerlink" title="安装Pinpoint"></a>安装Pinpoint</h5><p>使用官方提供的docker-compose快速安装Pinpoint。</p>
+<h6 id="克隆代码到本地"><a href="#克隆代码到本地" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆pinpoint-docker到本地，<code>git clone https://github.com/naver/pinpoint-docker.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191203183148896.png" alt="在这里插入图片描述"></p>
+<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose pull &amp;&amp; docker-compose up -d</span><br></pre></td></tr></table></figure>
+<p>看到控制台打印以下信息，说明启动完成：<br><img src="https://img-blog.csdnimg.cn/20191203180255169.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问<code>localhost:8079</code>，看到如下页面，即代表启动成功，但此时是没有应用信息的，需要我们使用pinpoint-agent来收集SpringBoot应用的调用链路数据。<br><img src="https://img-blog.csdnimg.cn/20191203183103727.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>此外，也可查看Habse的WebUI地址：<code>http://localhost:16010</code><br><img src="https://img-blog.csdnimg.cn/20191203183506426.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="SpringBoot应用整合"><a href="#SpringBoot应用整合" class="headerlink" title="SpringBoot应用整合"></a>SpringBoot应用整合</h5><p>打开Pinpoint WebUI点击右上角设置按钮可以看到这个界面，点击Installation可看到集成教程。<br><img src="https://img-blog.csdnimg.cn/20191205085713531.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="下载配置Pinpoint-Agent"><a href="#下载配置Pinpoint-Agent" class="headerlink" title="下载配置Pinpoint Agent"></a>下载配置Pinpoint Agent</h6><p>首先下载Pinpoint Agent<br><a href="https://github.com/naver/pinpoint/releases/download/1.8.5/pinpoint-agent-1.8.5.tar.gz" target="_blank" rel="noopener">pinpoint-agent-1.8.5.tar.gz</a><br>解压后，修改配置文件：<br>1.修改第8行为Pinpoint部署ip<br><img src="https://img-blog.csdnimg.cn/20191204084204295.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>2.在第184行添加应用类型SPRING_BOOT<br><img src="https://img-blog.csdnimg.cn/20191204084306553.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3.在第420行添加SpringBoot启动类全路径，多个用逗号隔开。<br><img src="https://img-blog.csdnimg.cn/20191205123507521.png" alt="在这里插入图片描述"></p>
+<h6 id="javaagent方式启动SpringBoot应用启动"><a href="#javaagent方式启动SpringBoot应用启动" class="headerlink" title="javaagent方式启动SpringBoot应用启动"></a>javaagent方式启动SpringBoot应用启动</h6><p>javaagent方式启动SpringBoot应用：<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">java -javaagent:./pinpoint-agent-1.8.5/pinpoint-bootstrap-1.8.5.jar -Dpinpoint.applicationName=remote-user-svc -Dpinpoint.agentId=00009 -jar ./user-svc-1.0-SNAPSHOT.jar</span><br></pre></td></tr></table></figure></p>
+<p>发起SpringBoot应用的api调用，完成后，查看Pinpoint WebUI，可以看到应用链路的调用图表：<br><img src="https://img-blog.csdnimg.cn/20191205114818228.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>也可查看对应的JVM使用情况：<br><img src="https://img-blog.csdnimg.cn/2019120511504629.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>如果要看到整个服务调用的链路，需要在pinpoint配置文件中添加各个模块的启动类，并且以javaagent方式启动应用。</p>
+<h5 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h5><p>pinpoint-agent在windows下似乎是不能收集到调用链路数据的，只能收集到jvm数据。<br>windows下这种方式启动SpringBoot应用控制台会输出：<br><img src="https://img-blog.csdnimg.cn/20191205122743247.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20191205122851697.png" alt="在这里插入图片描述"><br>最终，是将应用打成jar包，在CentOS下才成功收集到调用链数据。</p>
+]]></content>
+      <categories>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>SpringCloud</tag>
+        <tag>Pinpoint</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SpringCloud应用指标监控：Prometheus+Grafana</title>
+    <url>/2020/01/18/SpringCloud%E5%BA%94%E7%94%A8%E6%8C%87%E6%A0%87%E7%9B%91%E6%8E%A7%EF%BC%9APrometheus-Grafana/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本篇文章演示使用Prometheus和Grafana做SpringCloud应用指标监控。</p></div><a id="more"></a>
+<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<p><strong>本文参考资料：</strong><br><a href="https://ryanyang.gitbook.io/prometheus/di-yi-zhang-jie-shao/overview" target="_blank" rel="noopener">Prometheus文档</a><br><a href="https://grafana.com/docs/" target="_blank" rel="noopener">Grafana文档</a></p>
+<h5 id="Docker方式安装Prometheus-Grafana"><a href="#Docker方式安装Prometheus-Grafana" class="headerlink" title="Docker方式安装Prometheus + Grafana"></a>Docker方式安装Prometheus + Grafana</h5><h6 id="克隆"><a href="#克隆" class="headerlink" title="克隆"></a>克隆</h6><p>使用github上开源项目快速搭建Prometheus + Grafana环境。<br><code>git clone https://github.com/vegasbrianc/prometheus.git</code></p>
+<h6 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改下图配置文件内容，在scrape_configs属性下添加一个job，去抓取SpringBoot的metrics数据。<br><img src="https://img-blog.csdnimg.cn/20191205142938730.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">'user-svc'</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># Override the global default and scrape targets from this job every 5 seconds.</span></span><br><span class="line">  <span class="attr">scrape_interval:</span> <span class="string">5s</span></span><br><span class="line">  <span class="attr">metrics_path:</span> <span class="string">'/actuator/prometheus'</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">static_configs:</span></span><br><span class="line">       <span class="bullet">-</span> <span class="attr">targets:</span> <span class="string">['host.docker.internal:8087']</span> <span class="comment"># 这里修改为需要抓取数据的应用端口</span></span><br><span class="line">         <span class="attr">labels:</span></span><br><span class="line">           <span class="attr">application:</span> <span class="string">'user-svc'</span></span><br></pre></td></tr></table></figure></p>
+<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><p>直接后台启动。<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问Prometheus控制台：<code>http://localhost:9090/targets</code>，<br>此时，由于SpringBoot应用还未配置启动，可以看到上面配置的job是DOWN状态。<br><img src="https://img-blog.csdnimg.cn/20191205143052153.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="SpringBoot应用集成Prometheus"><a href="#SpringBoot应用集成Prometheus" class="headerlink" title="SpringBoot应用集成Prometheus"></a>SpringBoot应用集成Prometheus</h5><h6 id="引入以下maven包"><a href="#引入以下maven包" class="headerlink" title="引入以下maven包"></a>引入以下maven包</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;io.micrometer&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="修改application-yml"><a href="#修改application-yml" class="headerlink" title="修改application.yml"></a>修改application.yml</h6><p>添加以下配置：<br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">promethus:</span></span><br><span class="line">      <span class="attr">enable:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">'*'</span></span><br></pre></td></tr></table></figure></p>
+<h6 id="启动验证"><a href="#启动验证" class="headerlink" title="启动验证"></a>启动验证</h6><p>启动SpringBoot应用，访问：<code>http://localhost:8087/actuator/prometheus</code><br>看到返回下面信息，就说明配置已经生效了。<br><img src="https://img-blog.csdnimg.cn/20191202195217476.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>再去Prometheus控制台查看，可以看到我们配置的Job状态已经是UP状态：<br><img src="https://img-blog.csdnimg.cn/20191205141311290.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="Grafana配置数据源"><a href="#Grafana配置数据源" class="headerlink" title="Grafana配置数据源"></a>Grafana配置数据源</h5><p>访问Grafana控制台：<br>地址：<code>localhost:3000</code>，用户名/密码：admin/foobar。用户名密码可去/grafana/config.monitoring下修改。登录成功后配置Prometheus的数据源：<br><img src="https://img-blog.csdnimg.cn/2019120514101035.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="Grafana导入Dashborad"><a href="#Grafana导入Dashborad" class="headerlink" title="Grafana导入Dashborad"></a>Grafana导入Dashborad</h5><p>Grafana官网提供现成的Jvm Dashborad，可去此链接查看：<a href="https://grafana.com/grafana/dashboards/4701" target="_blank" rel="noopener">https://grafana.com/grafana/dashboards/4701</a>，<img src="https://img-blog.csdnimg.cn/20191205141728467.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>将复制到的Id填入：<br><img src="https://img-blog.csdnimg.cn/20191205141936293.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>选择prometheus数据源：<br><img src="https://img-blog.csdnimg.cn/20191205142027517.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>完成后可以看到jvm相关的dashborad了：<br><img src="https://img-blog.csdnimg.cn/20191205142112671.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>Prometheus支持自定义metrics。<br>Grafana还提供了AlertManager、自定义Dashboard等很丰富的功能，需要使用可去官方文档了解。</p>
+]]></content>
+      <categories>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>SpringCloud</tag>
+        <tag>Prometheus</tag>
+        <tag>Grafana</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SpringCloud日志集中化处理：ELK+Kafka</title>
+    <url>/2020/01/14/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章演示使用SpringCloud如何整合ELK+Kafka做微服务日志集中化处理。</p></div><a id="more"></a> 
+<p>本文示例代码已上传至github：<br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<h5 id="为什么需要对微服务日志做集中化处理"><a href="#为什么需要对微服务日志做集中化处理" class="headerlink" title="为什么需要对微服务日志做集中化处理"></a>为什么需要对微服务日志做集中化处理</h5><p>在微服务架构下，各个基础服务可能使用集群方式部署在不同的机器上，这样日志查看就变得非常困难，一旦服务出现问题，在大量的日志下很难定位问题，所以就需要对微服务日志进行集中式处理，以便于我们查找、定位问题。<br>ELK是目前主流的日志收集处理方案，具有良好的性能和美观的界面，所以我们采用如下方案来对SpringCloud日志进行集中化处理：<br><img src="https://img-blog.csdnimg.cn/20191130142354674.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="SpringBoot整合ELK"></p>
+<h5 id="为什么需要kafka"><a href="#为什么需要kafka" class="headerlink" title="为什么需要kafka"></a>为什么需要kafka</h5><p>原因有两点：</p>
+<ul>
+<li>保证LogStash可用性。当业务量增大时，日志跟着增多，直接传入会使LogStash压力过大，可能挂掉，所以需要增加一个缓冲区。</li>
+<li>日志数据解耦。为其他数据分析平台提供日志，可从Kafka中获取日志进行实时分析处理。</li>
+</ul>
+<h5 id="安装Kafka"><a href="#安装Kafka" class="headerlink" title="安装Kafka"></a>安装Kafka</h5><p>使用Github上的开源项目来快速搭建Kakfa环境。</p>
+<h6 id="克隆代码到本地"><a href="#克隆代码到本地" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆elk到本地，<code>https://github.com/wurstmeister/kafka-docker.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191130161013345.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改<strong>docker-compose-single-broker.yml</strong>文件，<strong>KAFKA_ADVERTISED_HOST_NAME</strong>为Kafka部署的IP；<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose-single-broker.yml</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://img-blog.csdnimg.cn/20191130161153683.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>修改<strong>docker-compose.yml</strong>文件，<strong>KAFKA_ADVERTISED_HOST_NAME</strong>为Kafka部署的IP；<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose.yml</span><br></pre></td></tr></table></figure></p>
+<p><img src="https://img-blog.csdnimg.cn/20191201145614322.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
+<p>看到控制台打印以下信息，说明启动成功：<br><img src="https://img-blog.csdnimg.cn/20191130170410720.png" alt="在这里插入图片描述"></p>
+<h5 id="安装elk"><a href="#安装elk" class="headerlink" title="安装elk"></a>安装elk</h5><p>同上，github上已经有成熟的elk搭建方案，所以我们直接使用github上的开源方案来搭建elk。</p>
+<h6 id="克隆代码到本地-1"><a href="#克隆代码到本地-1" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆elk到本地，<code>git clone https://github.com/deviantony/docker-elk.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191130101517691.png" alt="在这里插入图片描述"></p>
+<h6 id="修改配置-1"><a href="#修改配置-1" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改<strong>docker-elk/logstash/pipeline/</strong>目录下的<strong>logstash.conf</strong>，将tcp方式改为kafka：<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line"><span class="comment">#	tcp &#123;</span></span><br><span class="line"><span class="comment">#		port =&gt; 5000</span></span><br><span class="line"><span class="comment">#	&#125;</span></span><br><span class="line">	kafka &#123;</span><br><span class="line">		id =&gt; <span class="string">"ms_id001"</span></span><br><span class="line">		bootstrap_servers =&gt; <span class="string">"YOUR-KAFKA-HOST"</span> <span class="comment"># 这里要修改为你的Kafka地址</span></span><br><span class="line">		topics =&gt; <span class="string">"test"</span></span><br><span class="line">		auto_offset_reset =&gt; <span class="string">"latest"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">## Add your filters / logstash plugins configuration here</span></span><br><span class="line"></span><br><span class="line">filter &#123;</span><br><span class="line">    grok &#123;</span><br><span class="line">        match =&gt; &#123;</span><br><span class="line">            <span class="string">"message"</span> =&gt; <span class="string">"%&#123;TIMESTAMP_ISO8601:logTime&#125; %&#123;GREEDYDATA:logThread&#125; %&#123;LOGLEVEL:logLevel&#125; %&#123;GREEDYDATA:logClass&#125; %&#123;GREEDYDATA:logContent&#125;"</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &#123;</span><br><span class="line">	elasticsearch &#123;</span><br><span class="line">		hosts =&gt; <span class="string">"elasticsearch:9200"</span></span><br><span class="line">		user =&gt; <span class="string">"elastic"</span></span><br><span class="line">		password =&gt; <span class="string">"changeme"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
+<p><strong>logstash自定义日志格式</strong><br>见上述配置文件中filter&gt;grok&gt;match下，详细的partterns可参考下面链接：<br><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns" target="_blank" rel="noopener">https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns</a></p>
+<h6 id="启动-1"><a href="#启动-1" class="headerlink" title="启动"></a>启动</h6><p>在此目录下使用<code>docker-compose up -d</code>命令来启动elk，看到控制台信息，则说明启动正常。<br><img src="https://img-blog.csdnimg.cn/20191130103653732.png" alt="在这里插入图片描述"></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问<a href="http://localhost:5601" target="_blank" rel="noopener">http://localhost:5601</a>,输入用户名:<strong>elastic</strong>,密码:<strong>changeme</strong>,看到如下页面，即代表启动成功。<br><img src="https://img-blog.csdnimg.cn/20191130103017377.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="SpringBoot整合ELK-Kafka"><a href="#SpringBoot整合ELK-Kafka" class="headerlink" title="SpringBoot整合ELK +  Kafka"></a>SpringBoot整合ELK +  Kafka</h5><h6 id="引入maven包"><a href="#引入maven包" class="headerlink" title="引入maven包"></a>引入maven包</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;com.github.danielwegener&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;logback-kafka-appender&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;0.2.0-RC2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="配置logback-spring-xml"><a href="#配置logback-spring-xml" class="headerlink" title="配置logback-spring.xml"></a>配置logback-spring.xml</h6><p>在SpringBoot应用resources目录下创建logback-spring文件，写入如下所示内容。<br>需要注意的有以下两点：</p>
+<ul>
+<li>配置文件下Kafka配置要根据自己的Kafka配置来修改。</li>
+<li>pattern是和logstash下filter&gt;grok&gt;match的内容相互对应。</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span>?&gt;</span><br><span class="line">&lt;!DOCTYPE configuration&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;springProperty scope=<span class="string">"context"</span> name=<span class="string">"kakfaHost"</span> <span class="built_in">source</span>=<span class="string">"logging.kafka.host"</span> defaultValue=<span class="string">"localhost"</span>/&gt;</span><br><span class="line">    &lt;include resource=<span class="string">"org/springframework/boot/logging/logback/base.xml"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;appender name=<span class="string">"KAFKA"</span> class=<span class="string">"com.github.danielwegener.logback.kafka.KafkaAppender"</span>&gt;</span><br><span class="line">        &lt;encoder&gt;</span><br><span class="line">            &lt;pattern&gt;</span><br><span class="line">                %d&#123;yyyy-MM-dd HH:mm:ss SSS&#125; [%thread] %-5level %logger&#123;50&#125; - %msg%n</span><br><span class="line">            &lt;/pattern&gt;</span><br><span class="line">        &lt;/encoder&gt;</span><br><span class="line">        &lt;topic&gt;<span class="built_in">test</span>&lt;/topic&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"CONSOLE"</span>/&gt;</span><br><span class="line">        &lt;producerConfig&gt;bootstrap.servers=YOUR-KAFKA-HOST&lt;/producerConfig&gt;</span><br><span class="line">        &lt;keyingStrategy class=<span class="string">"com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"</span>/&gt;</span><br><span class="line">        &lt;deliveryStrategy class=<span class="string">"com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"</span>/&gt;</span><br><span class="line">    &lt;/appender&gt;</span><br><span class="line"></span><br><span class="line">    &lt;root level=<span class="string">"INFO"</span>&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"KAFKA"</span>/&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"CONSOLE"</span>/&gt;</span><br><span class="line">    &lt;/root&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="启动应用验证"><a href="#启动应用验证" class="headerlink" title="启动应用验证"></a>启动应用验证</h6><p>应用启动成功后，可登入Kibana控制台查看应用日志是否成功写入。可以看到应用日志已经按照我们自定义的格式写入到ES中。<br><img src="https://img-blog.csdnimg.cn/20191201152805167.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p>至此，使用SpringCloud集成ELK + Kafka集中化日志处理已完成。示例代码可参考文首github。</p>
+]]></content>
+      <categories>
+        <category>微服务</category>
+      </categories>
+      <tags>
+        <tag>SpringCloud</tag>
+        <tag>ELK</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>SpringCloud限流熔断：Spring-Cloud-Alibaba-Sentinel</title>
+    <url>/2020/01/07/SpringCloud%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%EF%BC%9ASpring-Cloud-Alibaba-Sentinel/</url>
+    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章演示使用Spring Cloud Alibaba Sentinel做可灵活配置的限流熔断。</p></div><a id="more"></a> 
+<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
+<p><a href="https://github.com/alibaba/spring-cloud-alibaba/wiki/Sentinel" target="_blank" rel="noopener">Spring Cloud Alibaba Sentinel官方文档</a></p>
+<h5 id="Spring-Cloud集成Sentinel"><a href="#Spring-Cloud集成Sentinel" class="headerlink" title="Spring Cloud集成Sentinel"></a>Spring Cloud集成Sentinel</h5><p>因为我们是要集成到SpringCloud中，所以使用官方提供的spring-cloud-starter-alibaba-sentinel。</p>
+<h6 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;com.alibaba.cloud&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-cloud-starter-alibaba-sentinel&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.1.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="配置application-yml"><a href="#配置application-yml" class="headerlink" title="配置application.yml"></a>配置application.yml</h6><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br></pre></td></tr></table></figure>
+<h6 id="定义资源"><a href="#定义资源" class="headerlink" title="定义资源"></a>定义资源</h6><p>在需要限流的接口上添加@SentinelResource注解，如图：<br><img src="https://img-blog.csdnimg.cn/20191206171806564.png" alt="在这里插入图片描述"></p>
+<h6 id="下载sentinel-dashborad"><a href="#下载sentinel-dashborad" class="headerlink" title="下载sentinel-dashborad"></a>下载sentinel-dashborad</h6><p>下载地址：<a href="https://github.com/alibaba/Sentinel/releases" target="_blank" rel="noopener">sentinel-dashborad下载</a><br>可根据需要直接下载jar包，或者下载源码使用<code>mvn clean package</code>命令打包。<br>sentinel-dashborad启动命令：<code>java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.7.0.jar</code></p>
+<h6 id="启动SpringBoot应用"><a href="#启动SpringBoot应用" class="headerlink" title="启动SpringBoot应用"></a>启动SpringBoot应用</h6><p>启动应用，访问<code>localhost:8080</code>，登录( 账户/密码：sentinel/sentinel )后可以看到此页面，一定要发起所定义资源的api调用才会在控制台看到自己应用的数据：<br><img src="https://img-blog.csdnimg.cn/2019120617204778.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h5><p>通过配置限流规则，对资源进行限流。<br><img src="https://img-blog.csdnimg.cn/20191206172208512.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>配置完成后保存，再快速发起多次请求，可以看到控制台报错，实际可根据异常，转换为对应的错误信息。<br><img src="https://img-blog.csdnimg.cn/20191206115000338.png" alt="在这里插入图片描述"></p>
+<h5 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h5><p>当某个应用超时，或者异常时，对其进行降级，防止拖垮整个应用，造成服务雪崩。</p>
+<h6 id="配置降级规则"><a href="#配置降级规则" class="headerlink" title="配置降级规则"></a>配置降级规则</h6><p><img src="https://img-blog.csdnimg.cn/20191206181602299.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="修改Feign配置"><a href="#修改Feign配置" class="headerlink" title="修改Feign配置"></a>修改Feign配置</h6><p>在maven配置中增加<br><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
+<h6 id="修改application-yml"><a href="#修改application-yml" class="headerlink" title="修改application.yml"></a>修改application.yml</h6><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br><span class="line"><span class="attr">feign:</span></span><br><span class="line">  <span class="attr">sentinel:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
+<p>完成后，进行服务测试，上面的配置是60秒中有5次异常就打开降级开关，即使停止user模块，也不会服务异常。<br>当前应用部分代码：<br><img src="https://img-blog.csdnimg.cn/20191206180501452.png" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20191206180508996.png" alt="在这里插入图片描述"></p>
+<h5 id="sentinel规则持久化"><a href="#sentinel规则持久化" class="headerlink" title="sentinel规则持久化"></a>sentinel规则持久化</h5><p>由于本次注册中心使用的nacos config，所以将sentinel规则持久化到nacos。</p>
+<h6 id="maven配置-1"><a href="#maven配置-1" class="headerlink" title="maven配置"></a>maven配置</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;com.alibaba.csp&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;sentinel-datasource-nacos&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
+<h6 id="配置application-yml-1"><a href="#配置application-yml-1" class="headerlink" title="配置application.yml"></a>配置application.yml</h6><p>其实就是指定要使用nacos的哪个配置文件。<br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br><span class="line">      <span class="attr">datasource:</span></span><br><span class="line">        <span class="attr">ds:</span></span><br><span class="line">          <span class="attr">nacos:</span></span><br><span class="line">            <span class="attr">server-addr:</span> <span class="string">localhost:8848</span></span><br><span class="line">            <span class="attr">dataId:</span> <span class="string">$&#123;spring.application.name&#125;-sentinel-rules</span></span><br><span class="line">            <span class="attr">groupId:</span> <span class="string">DEFAULT_GROUP</span></span><br><span class="line">            <span class="attr">ruleType:</span> <span class="string">flow</span></span><br></pre></td></tr></table></figure></p>
+<h6 id="nacos配置"><a href="#nacos配置" class="headerlink" title="nacos配置"></a>nacos配置</h6><p>新增配置文件，需要注意的是文件名称要和application.yml中配置的配置文件前缀对上，不然将读不到配置文件。<br><img src="https://img-blog.csdnimg.cn/2019120713414244.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>配置发布之后，再来查看sentinel dashborad，可以看到，nacos中新增的配置，已经被读取到sentinel控制台了。如果需要修改规则配置，直接修改nacos的配置文件就行了，会同步到sentinel。<br><img src="https://img-blog.csdnimg.cn/20191207135204757.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>nacos的配置是可以持久化到数据库的，这样就相当于sentinel的规则已经被存储到数据库了。查看数据库，可以看到sentinel配置文件已经被保存到数据库里。<br><img src="https://img-blog.csdnimg.cn/20191207134950611.png" alt="在这里插入图片描述"></p>
+<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>sentinel规则配置灵活，除了本文演示的，还有许多可配置的规则，实际使用时，可查看官方文档，根据实际业务灵活配置。</p>
+]]></content>
+      <tags>
+        <tag>SpringCloud</tag>
+        <tag>Alibaba Sentinel</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>类加载与双亲委派机制</title>
+    <url>/2019/12/26/%E7%B1%BB%E5%8A%A0%E8%BD%BD%E4%B8%8E%E5%8F%8C%E4%BA%B2%E5%A7%94%E6%B4%BE%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本编文章总结了JVM类加载与双亲委派机制。</p></div><a id="more"></a>
+<h6 id="JVM加载一个类的过程"><a href="#JVM加载一个类的过程" class="headerlink" title="JVM加载一个类的过程"></a>JVM加载一个类的过程</h6><p>加载一个类主要分为三个阶段：<br>1、加载，通过ClassLoader加载Class文件字节码，生成Class对象；<br>2、链接，分为三个子过程校验-准备-解析；</p>
+<ul>
+<li>校验，检查加载的class的正确性和安全性</li>
+<li>准备，为类变量分配存储空间并设置类变量初始值</li>
+<li>解析，JVM将常量池内的符号引用转换为直接引用</li>
+</ul>
+<p>3、初始化，执行类变量赋值和静态代码块；</p>
+<h6 id="类加载方式"><a href="#类加载方式" class="headerlink" title="类加载方式"></a>类加载方式</h6><p>类的加载方式有两种：</p>
+<ul>
+<li>隐式加载：使用 new + 构造方法时，隐式的调用类加载器，加载对应的类到 JVM 中，是最常见的类加载方式。</li>
+<li>显式加载：使用 loadClass()、forName() 等方法显式的加载需要的类，对于显式加载这种类加载方式来讲，当我们获取到了 Class 对象后，需要调用 Class 对象的 newInstance() 方法来生成对象的实例。</li>
+</ul>
+<h6 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h6><p>类加载器主要工作在Class装载过程的加载阶段，分为以下几种：</p>
+<ul>
+<li>Bootstrap ClassLoader，启动类加载器主要负责加载我们Java安装目录下lib下的核心类。</li>
+<li>Extension ClassLoader，扩展类加载器，是去加载安装目录下lib/ext的一些类。</li>
+<li>Application ClassLoader，应用程序类加载器，负责加载我们自己写的java类到内存中。</li>
+<li>自定义类加载器，我们自己编写的。继承ClassLoader类，重写findClass方法。</li>
+</ul>
+<h6 id="双亲委派机制"><a href="#双亲委派机制" class="headerlink" title="双亲委派机制"></a>双亲委派机制</h6><p>Jvm的类加载器是亲子层级的，当需要加载一个类的时候，子类加载器并不会马上去加载，而是依次去请求父类加载器加载，一直往上请求到最高类加载器：启动类加载器。当启动类加载器加载不了的时候，依次往下让子类加载器进行加载。当达到最底下的时候，如果还是加载不到该类，就会出现ClassNotFound的情况。</p>
+<p><img src="https://img-blog.csdnimg.cn/20200131173202468.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<p><strong>双亲委派机制的作用</strong></p>
+<ul>
+<li>避免多份字节码的重复加载，当父ClassLoader已经加载了该类时，就没有必要子ClassLoader再加载一次。</li>
+<li>安全，java核心api中定义类型不会被随意替换，假设通过网络传递一个名为java.lang.Integer的类，通过双亲委托模式传递到启动类加载器，而启动类加载器在核心Java API发现这个名字的类，发现该类已被加载，并不会重新加载网络传递的过来的java.lang.Integer，而直接返回已加载过的Integer.class，这样便可以防止核心API库被随意篡改。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Java</category>
+      </categories>
+      <tags>
+        <tag>JVM</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>Redis过期策略与内存淘汰机制</title>
+    <url>/2019/12/22/Redis%E8%BF%87%E6%9C%9F%E7%AD%96%E7%95%A5%E4%B8%8E%E5%86%85%E5%AD%98%E6%B7%98%E6%B1%B0%E6%9C%BA%E5%88%B6/</url>
+    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本篇文章总结了Redis过期策略与内存淘汰机制。</p></div><a id="more"></a> 
+<h6 id="过期策略"><a href="#过期策略" class="headerlink" title="过期策略"></a>过期策略</h6><p>Redis采用的过期策略是惰性删除+定期删除。</p>
+<ul>
+<li>惰性删除：key过期的时候不删除，每次在Redis进行get或setnx等操作时，先检查key是否过期，若过期，则删除，同时返回null。</li>
+<li>定期删除：指的是redis默认是每隔一段时间就随机抽取一些设置了过期时间的key，检查其是否过期，如果过期就删除。</li>
+</ul>
+<p>假设此时redis里放了10w个key，都设置了过期时间，如果每隔几百毫秒，就检查10w个key，那redis基本上扛不住，cpu 负载会很高，都消耗在检查过期key上了。所以实际上redis是每隔100ms随机抽取一些key来检查和删除的。</p>
+<p>但是定期删除可能会导致很多过期key到了时间并没有被删除掉，所以就得搭配惰性删除了。在获取某个设置了过期时间的key的时候，redis会检查一下 ，这个key是否过期，如果过期了此时就会删除这个key。</p>
+<p>但是如果定期删除漏掉了很多过期 key，然后我们也没对这些key及时执行查询操作，也就是说没走惰性删除，此时就会有大量过期key堆积在内存里，此时就需要<strong>内存淘汰机制</strong>了；</p>
+<h6 id="内存淘汰机制"><a href="#内存淘汰机制" class="headerlink" title="内存淘汰机制"></a>内存淘汰机制</h6><p>redis内存淘汰机制有以下几个：</p>
+<ul>
+<li>noeviction: 当内存不足以容纳新写入数据时，新写入操作会报错，不常用；</li>
+<li>allkeys-lru：当内存不足以容纳新写入数据时，在键空间中，移除最近最少使用的 key，最常用。</li>
+<li>allkeys-random：当内存不足以容纳新写入数据时，在键空间中，随机移除某个key，不常用。</li>
+<li>volatile-lru：当内存不足以容纳新写入数据时，在设置了过期时间的键空间中，移除最近最少使用的key（不常用）。</li>
+<li>volatile-random：当内存不足以容纳新写入数据时，在设置了过期时间的键空间中，随机移除某个key。</li>
+<li>volatile-ttl：当内存不足以容纳新写入数据时，在设置了过期时间的键空间中，有更早过期时间的key优先移除。</li>
+</ul>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
+  </entry>
+  <entry>
     <title>RocketMQ事务消息底层实现原理分析</title>
     <url>/2019/12/19/RocketMQ%E4%BA%8B%E5%8A%A1%E6%B6%88%E6%81%AF%E5%BA%95%E5%B1%82%E5%AE%9E%E7%8E%B0%E5%8E%9F%E7%90%86%E5%88%86%E6%9E%90/</url>
     <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章分析一下RocketMQ事务消息底层实现原理。</p></div><a id="more"></a> 
@@ -60,6 +414,31 @@
       <tags>
         <tag>RocketMQ</tag>
       </tags>
+  </entry>
+  <entry>
+    <title>Redis数据类型及适用场景</title>
+    <url>/2019/12/15/Redis%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E5%8F%8A%E9%80%82%E7%94%A8%E5%9C%BA%E6%99%AF/</url>
+    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章总结Redis的五种数据类型和它们的适用场景。</p></div><a id="more"></a> 
+<p>Redis支持五种数据类型：string（字符串），hash（哈希），list（列表），set（集合）及zset(sorted set：有序集合)。</p>
+<h6 id="string"><a href="#string" class="headerlink" title="string"></a>string</h6><p>string是redis最基本的类型，k-v格式存储。value其实不仅是String，也可以是数字或者图片的序列化，最大能存储 512MB;</p>
+<p>常用命令：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">set k v </span><br><span class="line">get k</span><br></pre></td></tr></table></figure></p>
+<p>适用场景：<br>常规key-value缓存应用，或者计数操作；</p>
+<h6 id="hash"><a href="#hash" class="headerlink" title="hash"></a>hash</h6><p>hash是类似 map 的一种结构，一般存储结构化的数据，比如把缓存一个对象，然后每次读写缓存的时候，可以就操作这个对象里的某个字段。</p>
+<p>常用命令：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">hset person name bingo</span><br><span class="line">hget person name</span><br></pre></td></tr></table></figure></p>
+<p>适用场景：<br>存储对象，如用户信息。</p>
+<h6 id="list"><a href="#list" class="headerlink" title="list"></a>list</h6><p>list是有序列表，比如可以通过 list 存储一些列表型的数据结构，类似评论列表、粉丝列表。</p>
+<p>常用命令：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">lpush mylist 1 左插入</span><br><span class="line">rpush mylist 2 右插入</span><br><span class="line">lpop mylist 从左边移除并返回列表的第一个元素</span><br><span class="line">rpop mylist 从右边移除并返回列表的第一个元素</span><br></pre></td></tr></table></figure></p>
+<p>可以通过 lrange 命令，读取某个闭区间内的元素，可以基于 list 实现简单的高性能分页；</p>
+<h6 id="set"><a href="#set" class="headerlink" title="set"></a>set</h6><p>set是无序集合，自动去重，底层数据结构是hashtable，无序，所以插入、删除操作时间复杂度都是O(1)；</p>
+<p>如果需要对一些数据进行快速的全局去重，可以直接放进redis set中，自动就去重了；当然也可以基于 jvm 内存里的 HashSet 进行去重，但是如果系统部署在多台机器上，就得基于 redis 进行全局的 set 去重。</p>
+<p>也可以基于 set 做交集、并集、差集的操作；</p>
+<p>常用命令：<br><figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">sadd mySet 1</span><br><span class="line">smembers mySet 查看所有</span><br><span class="line">spop mySet 随机删除</span><br></pre></td></tr></table></figure></p>
+<h6 id="zset-sorted-set"><a href="#zset-sorted-set" class="headerlink" title="zset(sorted set)"></a>zset(sorted set)</h6><p>是排序的 set，去重但可以排序，可以通过用户额外提供一个优先级(score)的参数来为成员排序，适用排行榜等业务场景；</p>
+<figure class="highlight plain"><table><tr><td class="code"><pre><span class="line">zadd board 1 zhangsan</span><br><span class="line">zrevrange board 0 3 获取排名前三数据，默认是升序，所以需要 rev 改为降序 </span><br><span class="line">zrank board zhangsan 获取张三的排名</span><br></pre></td></tr></table></figure>
+]]></content>
+      <categories>
+        <category>Redis</category>
+      </categories>
   </entry>
   <entry>
     <title>RocketMQ消息积压问题</title>
@@ -276,270 +655,6 @@
       </categories>
       <tags>
         <tag>RocketMQ</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>基于SpringCloud（Greenwich.SR2）搭建的微服务脚手架（适用于在线系统）</title>
-    <url>/2019/11/24/%E5%9F%BA%E4%BA%8ESpringCloud%EF%BC%88Greenwich-SR2%EF%BC%89%E6%90%AD%E5%BB%BA%E7%9A%84%E5%BE%AE%E6%9C%8D%E5%8A%A1%E8%84%9A%E6%89%8B%E6%9E%B6%EF%BC%88%E9%80%82%E7%94%A8%E4%BA%8E%E5%9C%A8%E7%BA%BF%E7%B3%BB%E7%BB%9F%EF%BC%89/</url>
-    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章介绍博主自己搭建的脚手架开源项目。</p></div><a id="more"></a> 
-<p>项目代码已上传至github：<br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
-<h2 id="microservice-scaffold"><a href="#microservice-scaffold" class="headerlink" title="microservice-scaffold"></a>microservice-scaffold</h2><p>基于Spring Cloud（Greenwich.SR2）搭建的微服务脚手架，已集成注册中心（Nacos Config）、配置中心（Nacos Discovery）、认证授权（Oauth2 + JWT）、日志处理（ELK + Kafka）、限流熔断（AliBaba Sentinel）、应用指标监控（Prometheus + Grafana）、调用链监控（Pinpoint）、以及Spring Boot Admin。</p>
-<h2 id="快速开始"><a href="#快速开始" class="headerlink" title="快速开始"></a>快速开始</h2><p>依赖环境：</p>
-<ul>
-<li><a href="http://www.oracle.com/technetwork/java/javase/downloads/index.html" target="_blank" rel="noopener">java8</a> </li>
-<li><a href="https://www.docker.com/" target="_blank" rel="noopener">docker</a> </li>
-<li><a href="https://git-scm.com/" target="_blank" rel="noopener">git</a></li>
-<li><a href="http://maven.apache.org/" target="_blank" rel="noopener">maven</a> </li>
-</ul>
-<h3 id="基础环境搭建"><a href="#基础环境搭建" class="headerlink" title="基础环境搭建"></a>基础环境搭建</h3><h4 id="nacos"><a href="#nacos" class="headerlink" title="nacos"></a>nacos</h4><p>当前应用配置文件在config/example下，需要导入到nacos中，<a href="https://editor.csdn.net/md/?articleId=103337840" target="_blank" rel="noopener">nacos官方文档</a></p>
-<h4 id="elk-kafka"><a href="#elk-kafka" class="headerlink" title="elk + kafka"></a>elk + kafka</h4><p>进入config/docker-env/kafka-docker目录下，执行：<code>docker-compose up -d</code>；进入config/docker-env/docker-elk目录下，执行：<code>docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=102717007" target="_blank" rel="noopener">Spring Cloud日志集中化处理：ELK + Kafka</a></p>
-<h4 id="prometheus-grafana"><a href="#prometheus-grafana" class="headerlink" title="prometheus + grafana"></a>prometheus + grafana</h4><p>进入config/docker-env/prometheus目录下，执行：<code>docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=103337840" target="_blank" rel="noopener">Spring Cloud应用指标监控：Prometheus + Grafana</a></p>
-<h4 id="pinpoint"><a href="#pinpoint" class="headerlink" title="pinpoint"></a>pinpoint</h4><p>进入config/docker-env/prometheus目录下，执行：<code>docker-compose pull &amp;&amp; docker-compose up -d</code>即可。<br>可参考：<a href="https://editor.csdn.net/md/?articleId=103335777" target="_blank" rel="noopener">Spring Cloud链路追踪：Pinpoint</a></p>
-<h3 id="创建数据库及表"><a href="#创建数据库及表" class="headerlink" title="创建数据库及表"></a>创建数据库及表</h3><p>导入根路径db/目录下各模块下数据库脚本，可创建一个库或者分模块创建。</p>
-<h3 id="启动应用"><a href="#启动应用" class="headerlink" title="启动应用"></a>启动应用</h3><p>将工程导入idea，逐个启动SpringBoot应用即可。所依赖的基础服务如下：</p>
-<table>
-<thead>
-<tr>
-<th>基础服务</th>
-<th>服务名</th>
-<th>端口</th>
-<th>说明</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>KV缓存</td>
-<td>redis</td>
-<td>6379</td>
-<td>目前用于存储JWT生成的access_token</td>
-</tr>
-<tr>
-<td>数据库</td>
-<td>mysql</td>
-<td>3306</td>
-<td></td>
-</tr>
-<tr>
-<td>消息中间件</td>
-<td>kafka</td>
-<td>9092</td>
-<td>与ELK集成</td>
-</tr>
-<tr>
-<td>注册与配置中心</td>
-<td>nacos</td>
-<td>8848</td>
-<td></td>
-</tr>
-<tr>
-<td>日志处理</td>
-<td>elk</td>
-<td>es:9200,kibana:5601,logstash:5000</td>
-<td></td>
-</tr>
-<tr>
-<td>应用指标监控</td>
-<td>prometheus</td>
-<td>9090</td>
-<td>共用</td>
-</tr>
-<tr>
-<td>数据可视化工具</td>
-<td>grafana</td>
-<td>3000</td>
-<td></td>
-</tr>
-<tr>
-<td>调用链路监控</td>
-<td>pinpoint</td>
-<td>8079</td>
-<td></td>
-</tr>
-<tr>
-<td>spring boot admin</td>
-<td>pinpoint</td>
-<td>8100</td>
-<td></td>
-</tr>
-<tr>
-<td>限流熔断</td>
-<td>alibaba sentinel</td>
-<td>8858</td>
-</tr>
-</tbody>
-</table>
-<p>各模块依赖服务：</p>
-<table>
-<thead>
-<tr>
-<th>服务名称</th>
-<th>说明</th>
-<th>依赖</th>
-<th>服务端口</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>auth</td>
-<td>认证服务器</td>
-<td>mysql、redis</td>
-<td>8190</td>
-</tr>
-<tr>
-<td>api-gateway</td>
-<td>api网关</td>
-<td>redis</td>
-<td>8088</td>
-</tr>
-<tr>
-<td>web-app</td>
-<td>服务聚合层</td>
-<td>alibaba sentinel</td>
-<td>8087</td>
-</tr>
-<tr>
-<td>user-svc</td>
-<td>用户服务</td>
-<td>mysql</td>
-<td>8000</td>
-</tr>
-<tr>
-<td>springboot admin</td>
-<td>应用监控</td>
-<td></td>
-<td>8100</td>
-</tr>
-</tbody>
-</table>
-<p>目前，仅完成基础框架搭建和统一报文、统一异常处理，暂未确定做什么业务。</p>
-]]></content>
-      <categories>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>SpringCloud</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SpringCloud限流熔断：Spring-Cloud-Alibaba-Sentinel</title>
-    <url>/2019/11/20/SpringCloud%E9%99%90%E6%B5%81%E7%86%94%E6%96%AD%EF%BC%9ASpring-Cloud-Alibaba-Sentinel/</url>
-    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章演示使用Spring Cloud Alibaba Sentinel做可灵活配置的限流熔断。</p></div><a id="more"></a> 
-<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
-<p><a href="https://github.com/alibaba/spring-cloud-alibaba/wiki/Sentinel" target="_blank" rel="noopener">Spring Cloud Alibaba Sentinel官方文档</a></p>
-<h5 id="Spring-Cloud集成Sentinel"><a href="#Spring-Cloud集成Sentinel" class="headerlink" title="Spring Cloud集成Sentinel"></a>Spring Cloud集成Sentinel</h5><p>因为我们是要集成到SpringCloud中，所以使用官方提供的spring-cloud-starter-alibaba-sentinel。</p>
-<h6 id="maven配置"><a href="#maven配置" class="headerlink" title="maven配置"></a>maven配置</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;com.alibaba.cloud&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-cloud-starter-alibaba-sentinel&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;2.1.1.RELEASE&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-<h6 id="配置application-yml"><a href="#配置application-yml" class="headerlink" title="配置application.yml"></a>配置application.yml</h6><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br></pre></td></tr></table></figure>
-<h6 id="定义资源"><a href="#定义资源" class="headerlink" title="定义资源"></a>定义资源</h6><p>在需要限流的接口上添加@SentinelResource注解，如图：<br><img src="https://img-blog.csdnimg.cn/20191206171806564.png" alt="在这里插入图片描述"></p>
-<h6 id="下载sentinel-dashborad"><a href="#下载sentinel-dashborad" class="headerlink" title="下载sentinel-dashborad"></a>下载sentinel-dashborad</h6><p>下载地址：<a href="https://github.com/alibaba/Sentinel/releases" target="_blank" rel="noopener">sentinel-dashborad下载</a><br>可根据需要直接下载jar包，或者下载源码使用<code>mvn clean package</code>命令打包。<br>sentinel-dashborad启动命令：<code>java -Dserver.port=8080 -Dcsp.sentinel.dashboard.server=localhost:8080 -Dproject.name=sentinel-dashboard -jar sentinel-dashboard-1.7.0.jar</code></p>
-<h6 id="启动SpringBoot应用"><a href="#启动SpringBoot应用" class="headerlink" title="启动SpringBoot应用"></a>启动SpringBoot应用</h6><p>启动应用，访问<code>localhost:8080</code>，登录( 账户/密码：sentinel/sentinel )后可以看到此页面，一定要发起所定义资源的api调用才会在控制台看到自己应用的数据：<br><img src="https://img-blog.csdnimg.cn/2019120617204778.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="限流"><a href="#限流" class="headerlink" title="限流"></a>限流</h5><p>通过配置限流规则，对资源进行限流。<br><img src="https://img-blog.csdnimg.cn/20191206172208512.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>配置完成后保存，再快速发起多次请求，可以看到控制台报错，实际可根据异常，转换为对应的错误信息。<br><img src="https://img-blog.csdnimg.cn/20191206115000338.png" alt="在这里插入图片描述"></p>
-<h5 id="降级"><a href="#降级" class="headerlink" title="降级"></a>降级</h5><p>当某个应用超时，或者异常时，对其进行降级，防止拖垮整个应用，造成服务雪崩。</p>
-<h6 id="配置降级规则"><a href="#配置降级规则" class="headerlink" title="配置降级规则"></a>配置降级规则</h6><p><img src="https://img-blog.csdnimg.cn/20191206181602299.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h6 id="修改Feign配置"><a href="#修改Feign配置" class="headerlink" title="修改Feign配置"></a>修改Feign配置</h6><p>在maven配置中增加<br><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.cloud&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;spring-cloud-starter-openfeign&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure></p>
-<h6 id="修改application-yml"><a href="#修改application-yml" class="headerlink" title="修改application.yml"></a>修改application.yml</h6><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br><span class="line"><span class="attr">feign:</span></span><br><span class="line">  <span class="attr">sentinel:</span></span><br><span class="line">    <span class="attr">enabled:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
-<p>完成后，进行服务测试，上面的配置是60秒中有5次异常就打开降级开关，即使停止user模块，也不会服务异常。<br>当前应用部分代码：<br><img src="https://img-blog.csdnimg.cn/20191206180501452.png" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20191206180508996.png" alt="在这里插入图片描述"></p>
-<h5 id="sentinel规则持久化"><a href="#sentinel规则持久化" class="headerlink" title="sentinel规则持久化"></a>sentinel规则持久化</h5><p>由于本次注册中心使用的nacos config，所以将sentinel规则持久化到nacos。</p>
-<h6 id="maven配置-1"><a href="#maven配置-1" class="headerlink" title="maven配置"></a>maven配置</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;com.alibaba.csp&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;sentinel-datasource-nacos&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;1.7.0&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-<h6 id="配置application-yml-1"><a href="#配置application-yml-1" class="headerlink" title="配置application.yml"></a>配置application.yml</h6><p>其实就是指定要使用nacos的哪个配置文件。<br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">sentinel:</span></span><br><span class="line">      <span class="attr">transport:</span></span><br><span class="line">        <span class="attr">port:</span> <span class="number">8719</span></span><br><span class="line">        <span class="attr">dashboard:</span> <span class="string">localhost:8080</span></span><br><span class="line">      <span class="attr">datasource:</span></span><br><span class="line">        <span class="attr">ds:</span></span><br><span class="line">          <span class="attr">nacos:</span></span><br><span class="line">            <span class="attr">server-addr:</span> <span class="string">localhost:8848</span></span><br><span class="line">            <span class="attr">dataId:</span> <span class="string">$&#123;spring.application.name&#125;-sentinel-rules</span></span><br><span class="line">            <span class="attr">groupId:</span> <span class="string">DEFAULT_GROUP</span></span><br><span class="line">            <span class="attr">ruleType:</span> <span class="string">flow</span></span><br></pre></td></tr></table></figure></p>
-<h6 id="nacos配置"><a href="#nacos配置" class="headerlink" title="nacos配置"></a>nacos配置</h6><p>新增配置文件，需要注意的是文件名称要和application.yml中配置的配置文件前缀对上，不然将读不到配置文件。<br><img src="https://img-blog.csdnimg.cn/2019120713414244.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>配置发布之后，再来查看sentinel dashborad，可以看到，nacos中新增的配置，已经被读取到sentinel控制台了。如果需要修改规则配置，直接修改nacos的配置文件就行了，会同步到sentinel。<br><img src="https://img-blog.csdnimg.cn/20191207135204757.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>nacos的配置是可以持久化到数据库的，这样就相当于sentinel的规则已经被存储到数据库了。查看数据库，可以看到sentinel配置文件已经被保存到数据库里。<br><img src="https://img-blog.csdnimg.cn/20191207134950611.png" alt="在这里插入图片描述"></p>
-<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>sentinel规则配置灵活，除了本文演示的，还有许多可配置的规则，实际使用时，可查看官方文档，根据实际业务灵活配置。</p>
-]]></content>
-      <tags>
-        <tag>SpringCloud</tag>
-        <tag>Alibaba Sentinel</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SpringCloud链路追踪：Pinpoint</title>
-    <url>/2019/11/16/SpringCloud%E9%93%BE%E8%B7%AF%E8%BF%BD%E8%B8%AA%EF%BC%9APinpoint/</url>
-    <content><![CDATA[<div class="note primary"><p>&emsp;&emsp;本篇文章演示使用Pinpoint做SpringCloud链路追踪。</p></div><a id="more"></a> 
-<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a><br><strong>Pinpoint 1.8.5文档：</strong><br><a href="https://naver.github.io/pinpoint/1.8.5/docker.html" target="_blank" rel="noopener">https://naver.github.io/pinpoint/1.8.5/docker.html</a></p>
-<h5 id="安装Pinpoint"><a href="#安装Pinpoint" class="headerlink" title="安装Pinpoint"></a>安装Pinpoint</h5><p>使用官方提供的docker-compose快速安装Pinpoint。</p>
-<h6 id="克隆代码到本地"><a href="#克隆代码到本地" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆pinpoint-docker到本地，<code>git clone https://github.com/naver/pinpoint-docker.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191203183148896.png" alt="在这里插入图片描述"></p>
-<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose pull &amp;&amp; docker-compose up -d</span><br></pre></td></tr></table></figure>
-<p>看到控制台打印以下信息，说明启动完成：<br><img src="https://img-blog.csdnimg.cn/20191203180255169.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问<code>localhost:8079</code>，看到如下页面，即代表启动成功，但此时是没有应用信息的，需要我们使用pinpoint-agent来收集SpringBoot应用的调用链路数据。<br><img src="https://img-blog.csdnimg.cn/20191203183103727.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>此外，也可查看Habse的WebUI地址：<code>http://localhost:16010</code><br><img src="https://img-blog.csdnimg.cn/20191203183506426.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="SpringBoot应用整合"><a href="#SpringBoot应用整合" class="headerlink" title="SpringBoot应用整合"></a>SpringBoot应用整合</h5><p>打开Pinpoint WebUI点击右上角设置按钮可以看到这个界面，点击Installation可看到集成教程。<br><img src="https://img-blog.csdnimg.cn/20191205085713531.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h6 id="下载配置Pinpoint-Agent"><a href="#下载配置Pinpoint-Agent" class="headerlink" title="下载配置Pinpoint Agent"></a>下载配置Pinpoint Agent</h6><p>首先下载Pinpoint Agent<br><a href="https://github.com/naver/pinpoint/releases/download/1.8.5/pinpoint-agent-1.8.5.tar.gz" target="_blank" rel="noopener">pinpoint-agent-1.8.5.tar.gz</a><br>解压后，修改配置文件：<br>1.修改第8行为Pinpoint部署ip<br><img src="https://img-blog.csdnimg.cn/20191204084204295.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>2.在第184行添加应用类型SPRING_BOOT<br><img src="https://img-blog.csdnimg.cn/20191204084306553.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>3.在第420行添加SpringBoot启动类全路径，多个用逗号隔开。<br><img src="https://img-blog.csdnimg.cn/20191205123507521.png" alt="在这里插入图片描述"></p>
-<h6 id="javaagent方式启动SpringBoot应用启动"><a href="#javaagent方式启动SpringBoot应用启动" class="headerlink" title="javaagent方式启动SpringBoot应用启动"></a>javaagent方式启动SpringBoot应用启动</h6><p>javaagent方式启动SpringBoot应用：<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">java -javaagent:./pinpoint-agent-1.8.5/pinpoint-bootstrap-1.8.5.jar -Dpinpoint.applicationName=remote-user-svc -Dpinpoint.agentId=00009 -jar ./user-svc-1.0-SNAPSHOT.jar</span><br></pre></td></tr></table></figure></p>
-<p>发起SpringBoot应用的api调用，完成后，查看Pinpoint WebUI，可以看到应用链路的调用图表：<br><img src="https://img-blog.csdnimg.cn/20191205114818228.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>也可查看对应的JVM使用情况：<br><img src="https://img-blog.csdnimg.cn/2019120511504629.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>如果要看到整个服务调用的链路，需要在pinpoint配置文件中添加各个模块的启动类，并且以javaagent方式启动应用。</p>
-<h5 id="注意"><a href="#注意" class="headerlink" title="注意"></a>注意</h5><p>pinpoint-agent在windows下似乎是不能收集到调用链路数据的，只能收集到jvm数据。<br>windows下这种方式启动SpringBoot应用控制台会输出：<br><img src="https://img-blog.csdnimg.cn/20191205122743247.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><img src="https://img-blog.csdnimg.cn/20191205122851697.png" alt="在这里插入图片描述"><br>最终，是将应用打成jar包，在CentOS下才成功收集到调用链数据。</p>
-]]></content>
-      <categories>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>SpringCloud</tag>
-        <tag>Pinpoint</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SpringCloud应用指标监控：Prometheus+Grafana</title>
-    <url>/2019/11/12/SpringCloud%E5%BA%94%E7%94%A8%E6%8C%87%E6%A0%87%E7%9B%91%E6%8E%A7%EF%BC%9APrometheus-Grafana/</url>
-    <content><![CDATA[<div class="note default"><p>&emsp;&emsp;本篇文章演示使用Prometheus和Grafana做SpringCloud应用指标监控。</p></div><a id="more"></a>
-<p><strong>本文示例代码已上传至github：</strong><br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
-<p><strong>本文参考资料：</strong><br><a href="https://ryanyang.gitbook.io/prometheus/di-yi-zhang-jie-shao/overview" target="_blank" rel="noopener">Prometheus文档</a><br><a href="https://grafana.com/docs/" target="_blank" rel="noopener">Grafana文档</a></p>
-<h5 id="Docker方式安装Prometheus-Grafana"><a href="#Docker方式安装Prometheus-Grafana" class="headerlink" title="Docker方式安装Prometheus + Grafana"></a>Docker方式安装Prometheus + Grafana</h5><h6 id="克隆"><a href="#克隆" class="headerlink" title="克隆"></a>克隆</h6><p>使用github上开源项目快速搭建Prometheus + Grafana环境。<br><code>git clone https://github.com/vegasbrianc/prometheus.git</code></p>
-<h6 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改下图配置文件内容，在scrape_configs属性下添加一个job，去抓取SpringBoot的metrics数据。<br><img src="https://img-blog.csdnimg.cn/20191205142938730.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="bullet">-</span> <span class="attr">job_name:</span> <span class="string">'user-svc'</span></span><br><span class="line"></span><br><span class="line">  <span class="comment"># Override the global default and scrape targets from this job every 5 seconds.</span></span><br><span class="line">  <span class="attr">scrape_interval:</span> <span class="string">5s</span></span><br><span class="line">  <span class="attr">metrics_path:</span> <span class="string">'/actuator/prometheus'</span></span><br><span class="line"></span><br><span class="line">  <span class="attr">static_configs:</span></span><br><span class="line">       <span class="bullet">-</span> <span class="attr">targets:</span> <span class="string">['host.docker.internal:8087']</span> <span class="comment"># 这里修改为需要抓取数据的应用端口</span></span><br><span class="line">         <span class="attr">labels:</span></span><br><span class="line">           <span class="attr">application:</span> <span class="string">'user-svc'</span></span><br></pre></td></tr></table></figure></p>
-<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><p>直接后台启动。<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure></p>
-<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问Prometheus控制台：<code>http://localhost:9090/targets</code>，<br>此时，由于SpringBoot应用还未配置启动，可以看到上面配置的job是DOWN状态。<br><img src="https://img-blog.csdnimg.cn/20191205143052153.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="SpringBoot应用集成Prometheus"><a href="#SpringBoot应用集成Prometheus" class="headerlink" title="SpringBoot应用集成Prometheus"></a>SpringBoot应用集成Prometheus</h5><h6 id="引入以下maven包"><a href="#引入以下maven包" class="headerlink" title="引入以下maven包"></a>引入以下maven包</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;spring-boot-starter-actuator&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br><span class="line">&lt;dependency&gt;</span><br><span class="line">	&lt;groupId&gt;io.micrometer&lt;/groupId&gt;</span><br><span class="line">	&lt;artifactId&gt;micrometer-registry-prometheus&lt;/artifactId&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-<h6 id="修改application-yml"><a href="#修改application-yml" class="headerlink" title="修改application.yml"></a>修改application.yml</h6><p>添加以下配置：<br><figure class="highlight yaml"><table><tr><td class="code"><pre><span class="line"><span class="attr">management:</span></span><br><span class="line">  <span class="attr">endpoints:</span></span><br><span class="line">    <span class="attr">promethus:</span></span><br><span class="line">      <span class="attr">enable:</span> <span class="literal">true</span></span><br><span class="line">    <span class="attr">web:</span></span><br><span class="line">      <span class="attr">exposure:</span></span><br><span class="line">        <span class="attr">include:</span> <span class="string">'*'</span></span><br></pre></td></tr></table></figure></p>
-<h6 id="启动验证"><a href="#启动验证" class="headerlink" title="启动验证"></a>启动验证</h6><p>启动SpringBoot应用，访问：<code>http://localhost:8087/actuator/prometheus</code><br>看到返回下面信息，就说明配置已经生效了。<br><img src="https://img-blog.csdnimg.cn/20191202195217476.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>再去Prometheus控制台查看，可以看到我们配置的Job状态已经是UP状态：<br><img src="https://img-blog.csdnimg.cn/20191205141311290.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="Grafana配置数据源"><a href="#Grafana配置数据源" class="headerlink" title="Grafana配置数据源"></a>Grafana配置数据源</h5><p>访问Grafana控制台：<br>地址：<code>localhost:3000</code>，用户名/密码：admin/foobar。用户名密码可去/grafana/config.monitoring下修改。登录成功后配置Prometheus的数据源：<br><img src="https://img-blog.csdnimg.cn/2019120514101035.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="Grafana导入Dashborad"><a href="#Grafana导入Dashborad" class="headerlink" title="Grafana导入Dashborad"></a>Grafana导入Dashborad</h5><p>Grafana官网提供现成的Jvm Dashborad，可去此链接查看：<a href="https://grafana.com/grafana/dashboards/4701" target="_blank" rel="noopener">https://grafana.com/grafana/dashboards/4701</a>，<img src="https://img-blog.csdnimg.cn/20191205141728467.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>将复制到的Id填入：<br><img src="https://img-blog.csdnimg.cn/20191205141936293.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>选择prometheus数据源：<br><img src="https://img-blog.csdnimg.cn/20191205142027517.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>完成后可以看到jvm相关的dashborad了：<br><img src="https://img-blog.csdnimg.cn/20191205142112671.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h5><p>Prometheus支持自定义metrics。<br>Grafana还提供了AlertManager、自定义Dashboard等很丰富的功能，需要使用可去官方文档了解。</p>
-]]></content>
-      <categories>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>SpringCloud</tag>
-        <tag>Prometheus</tag>
-        <tag>Grafana</tag>
-      </tags>
-  </entry>
-  <entry>
-    <title>SpringCloud日志集中化处理：ELK+Kafka</title>
-    <url>/2019/11/08/SpringCloud%E6%97%A5%E5%BF%97%E9%9B%86%E4%B8%AD%E5%8C%96%E5%A4%84%E7%90%86%EF%BC%9AELK-Kafka/</url>
-    <content><![CDATA[<div class="note warning"><p>&emsp;&emsp;本篇文章演示使用SpringCloud如何整合ELK+Kafka做微服务日志集中化处理。</p></div><a id="more"></a> 
-<p>本文示例代码已上传至github：<br><a href="https://github.com/ZhaiBo/microservice-scaffold" target="_blank" rel="noopener">https://github.com/ZhaiBo/microservice-scaffold</a></p>
-<h5 id="为什么需要对微服务日志做集中化处理"><a href="#为什么需要对微服务日志做集中化处理" class="headerlink" title="为什么需要对微服务日志做集中化处理"></a>为什么需要对微服务日志做集中化处理</h5><p>在微服务架构下，各个基础服务可能使用集群方式部署在不同的机器上，这样日志查看就变得非常困难，一旦服务出现问题，在大量的日志下很难定位问题，所以就需要对微服务日志进行集中式处理，以便于我们查找、定位问题。<br>ELK是目前主流的日志收集处理方案，具有良好的性能和美观的界面，所以我们采用如下方案来对SpringCloud日志进行集中化处理：<br><img src="https://img-blog.csdnimg.cn/20191130142354674.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="SpringBoot整合ELK"></p>
-<h5 id="为什么需要kafka"><a href="#为什么需要kafka" class="headerlink" title="为什么需要kafka"></a>为什么需要kafka</h5><p>原因有两点：</p>
-<ul>
-<li>保证LogStash可用性。当业务量增大时，日志跟着增多，直接传入会使LogStash压力过大，可能挂掉，所以需要增加一个缓冲区。</li>
-<li>日志数据解耦。为其他数据分析平台提供日志，可从Kafka中获取日志进行实时分析处理。</li>
-</ul>
-<h5 id="安装Kafka"><a href="#安装Kafka" class="headerlink" title="安装Kafka"></a>安装Kafka</h5><p>使用Github上的开源项目来快速搭建Kakfa环境。</p>
-<h6 id="克隆代码到本地"><a href="#克隆代码到本地" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆elk到本地，<code>https://github.com/wurstmeister/kafka-docker.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191130161013345.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h6 id="修改配置"><a href="#修改配置" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改<strong>docker-compose-single-broker.yml</strong>文件，<strong>KAFKA_ADVERTISED_HOST_NAME</strong>为Kafka部署的IP；<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose-single-broker.yml</span><br></pre></td></tr></table></figure></p>
-<p><img src="https://img-blog.csdnimg.cn/20191130161153683.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"><br>修改<strong>docker-compose.yml</strong>文件，<strong>KAFKA_ADVERTISED_HOST_NAME</strong>为Kafka部署的IP；<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">vim docker-compose.yml</span><br></pre></td></tr></table></figure></p>
-<p><img src="https://img-blog.csdnimg.cn/20191201145614322.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h6 id="启动"><a href="#启动" class="headerlink" title="启动"></a>启动</h6><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">docker-compose up -d</span><br></pre></td></tr></table></figure>
-<p>看到控制台打印以下信息，说明启动成功：<br><img src="https://img-blog.csdnimg.cn/20191130170410720.png" alt="在这里插入图片描述"></p>
-<h5 id="安装elk"><a href="#安装elk" class="headerlink" title="安装elk"></a>安装elk</h5><p>同上，github上已经有成熟的elk搭建方案，所以我们直接使用github上的开源方案来搭建elk。</p>
-<h6 id="克隆代码到本地-1"><a href="#克隆代码到本地-1" class="headerlink" title="克隆代码到本地"></a>克隆代码到本地</h6><p>使用此命令克隆elk到本地，<code>git clone https://github.com/deviantony/docker-elk.git</code><br>可以看到如下文件：<br><img src="https://img-blog.csdnimg.cn/20191130101517691.png" alt="在这里插入图片描述"></p>
-<h6 id="修改配置-1"><a href="#修改配置-1" class="headerlink" title="修改配置"></a>修改配置</h6><p>修改<strong>docker-elk/logstash/pipeline/</strong>目录下的<strong>logstash.conf</strong>，将tcp方式改为kafka：<br><figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">input &#123;</span><br><span class="line"><span class="comment">#	tcp &#123;</span></span><br><span class="line"><span class="comment">#		port =&gt; 5000</span></span><br><span class="line"><span class="comment">#	&#125;</span></span><br><span class="line">	kafka &#123;</span><br><span class="line">		id =&gt; <span class="string">"ms_id001"</span></span><br><span class="line">		bootstrap_servers =&gt; <span class="string">"YOUR-KAFKA-HOST"</span> <span class="comment"># 这里要修改为你的Kafka地址</span></span><br><span class="line">		topics =&gt; <span class="string">"test"</span></span><br><span class="line">		auto_offset_reset =&gt; <span class="string">"latest"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="comment">## Add your filters / logstash plugins configuration here</span></span><br><span class="line"></span><br><span class="line">filter &#123;</span><br><span class="line">    grok &#123;</span><br><span class="line">        match =&gt; &#123;</span><br><span class="line">            <span class="string">"message"</span> =&gt; <span class="string">"%&#123;TIMESTAMP_ISO8601:logTime&#125; %&#123;GREEDYDATA:logThread&#125; %&#123;LOGLEVEL:logLevel&#125; %&#123;GREEDYDATA:logClass&#125; %&#123;GREEDYDATA:logContent&#125;"</span></span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line">output &#123;</span><br><span class="line">	elasticsearch &#123;</span><br><span class="line">		hosts =&gt; <span class="string">"elasticsearch:9200"</span></span><br><span class="line">		user =&gt; <span class="string">"elastic"</span></span><br><span class="line">		password =&gt; <span class="string">"changeme"</span></span><br><span class="line">	&#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure></p>
-<p><strong>logstash自定义日志格式</strong><br>见上述配置文件中filter&gt;grok&gt;match下，详细的partterns可参考下面链接：<br><a href="https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns" target="_blank" rel="noopener">https://github.com/logstash-plugins/logstash-patterns-core/blob/master/patterns/grok-patterns</a></p>
-<h6 id="启动-1"><a href="#启动-1" class="headerlink" title="启动"></a>启动</h6><p>在此目录下使用<code>docker-compose up -d</code>命令来启动elk，看到控制台信息，则说明启动正常。<br><img src="https://img-blog.csdnimg.cn/20191130103653732.png" alt="在这里插入图片描述"></p>
-<h6 id="验证"><a href="#验证" class="headerlink" title="验证"></a>验证</h6><p>访问<a href="http://localhost:5601" target="_blank" rel="noopener">http://localhost:5601</a>,输入用户名:<strong>elastic</strong>,密码:<strong>changeme</strong>,看到如下页面，即代表启动成功。<br><img src="https://img-blog.csdnimg.cn/20191130103017377.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<h5 id="SpringBoot整合ELK-Kafka"><a href="#SpringBoot整合ELK-Kafka" class="headerlink" title="SpringBoot整合ELK +  Kafka"></a>SpringBoot整合ELK +  Kafka</h5><h6 id="引入maven包"><a href="#引入maven包" class="headerlink" title="引入maven包"></a>引入maven包</h6><figure class="highlight"><table><tr><td class="code"><pre><span class="line">&lt;dependency&gt;</span><br><span class="line">    &lt;groupId&gt;com.github.danielwegener&lt;/groupId&gt;</span><br><span class="line">    &lt;artifactId&gt;logback-kafka-appender&lt;/artifactId&gt;</span><br><span class="line">    &lt;version&gt;0.2.0-RC2&lt;/version&gt;</span><br><span class="line">&lt;/dependency&gt;</span><br></pre></td></tr></table></figure>
-<h6 id="配置logback-spring-xml"><a href="#配置logback-spring-xml" class="headerlink" title="配置logback-spring.xml"></a>配置logback-spring.xml</h6><p>在SpringBoot应用resources目录下创建logback-spring文件，写入如下所示内容。<br>需要注意的有以下两点：</p>
-<ul>
-<li>配置文件下Kafka配置要根据自己的Kafka配置来修改。</li>
-<li>pattern是和logstash下filter&gt;grok&gt;match的内容相互对应。</li>
-</ul>
-<figure class="highlight bash"><table><tr><td class="code"><pre><span class="line">&lt;?xml version=<span class="string">"1.0"</span> encoding=<span class="string">"UTF-8"</span>?&gt;</span><br><span class="line">&lt;!DOCTYPE configuration&gt;</span><br><span class="line">&lt;configuration&gt;</span><br><span class="line">    &lt;springProperty scope=<span class="string">"context"</span> name=<span class="string">"kakfaHost"</span> <span class="built_in">source</span>=<span class="string">"logging.kafka.host"</span> defaultValue=<span class="string">"localhost"</span>/&gt;</span><br><span class="line">    &lt;include resource=<span class="string">"org/springframework/boot/logging/logback/base.xml"</span>/&gt;</span><br><span class="line"></span><br><span class="line">    &lt;appender name=<span class="string">"KAFKA"</span> class=<span class="string">"com.github.danielwegener.logback.kafka.KafkaAppender"</span>&gt;</span><br><span class="line">        &lt;encoder&gt;</span><br><span class="line">            &lt;pattern&gt;</span><br><span class="line">                %d&#123;yyyy-MM-dd HH:mm:ss SSS&#125; [%thread] %-5level %logger&#123;50&#125; - %msg%n</span><br><span class="line">            &lt;/pattern&gt;</span><br><span class="line">        &lt;/encoder&gt;</span><br><span class="line">        &lt;topic&gt;<span class="built_in">test</span>&lt;/topic&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"CONSOLE"</span>/&gt;</span><br><span class="line">        &lt;producerConfig&gt;bootstrap.servers=YOUR-KAFKA-HOST&lt;/producerConfig&gt;</span><br><span class="line">        &lt;keyingStrategy class=<span class="string">"com.github.danielwegener.logback.kafka.keying.NoKeyKeyingStrategy"</span>/&gt;</span><br><span class="line">        &lt;deliveryStrategy class=<span class="string">"com.github.danielwegener.logback.kafka.delivery.AsynchronousDeliveryStrategy"</span>/&gt;</span><br><span class="line">    &lt;/appender&gt;</span><br><span class="line"></span><br><span class="line">    &lt;root level=<span class="string">"INFO"</span>&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"KAFKA"</span>/&gt;</span><br><span class="line">        &lt;appender-ref ref=<span class="string">"CONSOLE"</span>/&gt;</span><br><span class="line">    &lt;/root&gt;</span><br><span class="line">&lt;/configuration&gt;</span><br></pre></td></tr></table></figure>
-<h6 id="启动应用验证"><a href="#启动应用验证" class="headerlink" title="启动应用验证"></a>启动应用验证</h6><p>应用启动成功后，可登入Kibana控制台查看应用日志是否成功写入。可以看到应用日志已经按照我们自定义的格式写入到ES中。<br><img src="https://img-blog.csdnimg.cn/20191201152805167.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
-<p>至此，使用SpringCloud集成ELK + Kafka集中化日志处理已完成。示例代码可参考文首github。</p>
-]]></content>
-      <categories>
-        <category>微服务</category>
-      </categories>
-      <tags>
-        <tag>SpringCloud</tag>
-        <tag>ELK</tag>
       </tags>
   </entry>
   <entry>
