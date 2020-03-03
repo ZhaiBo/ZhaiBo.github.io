@@ -1,4 +1,939 @@
-<!DOCTYPE html><html class="theme-next gemini use-motion" lang="zh-Hans"><head><meta name="generator" content="Hexo 3.9.0"><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#222"><script src="/lib/pace/pace.min.js?v=1.0.2"></script><link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet"><meta http-equiv="Cache-Control" content="no-transform"><meta http-equiv="Cache-Control" content="no-siteapp"><link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css"><link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css"><link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css"><link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4"><link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=5.1.4"><link rel="icon" type="image/png" sizes="16x16" href="/images/cat16.png?v=5.1.4"><link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222"><meta name="keywords" content="RocketMQ,"><meta name="description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。"><meta name="keywords" content="RocketMQ"><meta property="og:type" content="article"><meta property="og:title" content="RocketMQ消息乱序问题"><meta property="og:url" content="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/index.html"><meta property="og:site_name" content="阿宅的技术博客"><meta property="og:description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。"><meta property="og:locale" content="zh-Hans"><meta property="og:image" content="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70"><meta property="og:updated_time" content="2020-02-28T10:47:32.486Z"><meta name="twitter:card" content="summary"><meta name="twitter:title" content="RocketMQ消息乱序问题"><meta name="twitter:description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。"><meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70"><script type="text/javascript" id="hexo.configurations">var NexT=window.NexT||{},CONFIG={root:"/",scheme:"Gemini",version:"5.1.4",sidebar:{position:"left",display:"post",offset:10,b2t:!0,scrollpercent:!0,onmobile:!1},fancybox:!0,tabs:!0,motion:{enable:!0,async:!1,transition:{post_block:"fadeIn",post_header:"slideDownIn",post_body:"slideDownIn",coll_header:"slideLeftIn",sidebar:"slideUpIn"}},duoshuo:{userId:"0",author:"博主"},algolia:{applicationID:"",apiKey:"",indexName:"",hits:{per_page:10},labels:{input_placeholder:"Search for Posts",hits_empty:"We didn't find any results for the search: ${query}",hits_stats:"${hits} results found in ${time} ms"}}}</script><link rel="canonical" href="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/"><script>!function(e,t,o,c,i,a,n){e.DaoVoiceObject=i,e[i]=e[i]||function(){(e[i].q=e[i].q||[]).push(arguments)},e[i].l=1*new Date,a=t.createElement(o),n=t.getElementsByTagName(o)[0],a.async=1,a.src=c,a.charset="utf-8",n.parentNode.insertBefore(a,n)}(window,document,"script",("https:"==document.location.protocol?"https:":"http:")+"//widget.daovoice.io/widget/0f81ff2f.js","daovoice"),daovoice("init",{app_id:"1b4551b7"}),daovoice("update")</script><title>RocketMQ消息乱序问题 | 阿宅的技术博客</title><script type="text/javascript">var _hmt=_hmt||[];!function(){var e=document.createElement("script");e.src="https://hm.baidu.com/hm.js?ce84efc6cd3d0e14408a4c868d25232a";var t=document.getElementsByTagName("script")[0];t.parentNode.insertBefore(e,t)}()</script></head><body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans"><div class="container sidebar-position-left page-post-detail"><div class="headband"></div> <a href="https://www.github.com/ZhaiBo" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewbox="0 0 250 250" style="fill:#151513;color:#fff;position:absolute;top:0;border:0;right:0" aria-hidden="true"><path d="M0 0 115 115 130 115 142 142 250 250 250 0Z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentColor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4L133.7 101.6C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8Z" fill="currentColor" class="octo-body"/></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style><header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader"><div class="header-inner"><div class="site-brand-wrapper"><div class="site-meta"><div class="custom-logo-site-title"><a href="/" class="brand" rel="start"><span class="logo-line-before"><i></i></span> <span class="site-title">阿宅的技术博客</span><span class="logo-line-after"><i></i></span></a></div><h1 class="site-subtitle" itemprop="description">( ゜- ゜)つロ</h1></div><div class="site-nav-toggle"> <button><span class="btn-bar"></span><span class="btn-bar"></span><span class="btn-bar"></span></button></div></div><nav class="site-nav"><ul id="menu" class="menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="menu-item-icon fa fa-fw fa-home"></i><br> 首页</a></li><li class="menu-item menu-item-tags"><a href="/tags/" rel="section"><i class="menu-item-icon fa fa-fw fa-tags"></i><br> 标签</a></li><li class="menu-item menu-item-categories"><a href="/categories/" rel="section"><i class="menu-item-icon fa fa-fw fa-th"></i><br> 分类</a></li><li class="menu-item menu-item-archives"><a href="/archives/" rel="section"><i class="menu-item-icon fa fa-fw fa-archive"></i><br> 归档</a></li><li class="menu-item menu-item-search"><a href="javascript:;" class="popup-trigger"><i class="menu-item-icon fa fa-search fa-fw"></i><br> 搜索</a></li></ul><div class="site-search"><div class="popup search-popup local-search-popup"><div class="local-search-header clearfix"><span class="search-icon"><i class="fa fa-search"></i></span><span class="popup-btn-close"><i class="fa fa-times-circle"></i></span><div class="local-search-input-wrapper"> <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input"></div></div><div id="local-search-result"></div></div></div></nav></div></header><main id="main" class="main"><div class="main-inner"><div class="content-wrap"><div id="content" class="content"><div id="posts" class="posts-expand"><article class="post post-type-normal" itemscope itemtype="http://schema.org/Article"><div class="post-block"><link itemprop="mainEntityOfPage" href="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/"><span hidden itemprop="author" itemscope itemtype="http://schema.org/Person"><meta itemprop="name" content="阿宅"><meta itemprop="description" content="我说所有的酒，都不如你。"><meta itemprop="image" content="/uploads/avatar.jpg"></span><span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization"><meta itemprop="name" content="阿宅的技术博客"></span><header class="post-header"><h2 class="post-title" itemprop="name headline">RocketMQ消息乱序问题</h2><div class="post-meta"><span class="post-time"><span class="post-meta-item-icon"><i class="fa fa-calendar-o"></i></span> <span class="post-meta-item-text">发表于</span> <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-09T20:31:28+08:00">2019-12-09</time></span> <span class="post-category"><span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-folder-o"></i></span> <span class="post-meta-item-text">分类于</span> <span itemprop="about" itemscope itemtype="http://schema.org/Thing"><a href="/categories/消息队列/" itemprop="url" rel="index"><span itemprop="name">消息队列</span></a></span></span> <span class="post-comments-count"><span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-comment-o"></i> <span>&nbsp;&nbsp;评论数:</span></span><a href="/2019/12/09/RocketMQ消息乱序问题/#comments" itemprop="discussionUrl"><span class="post-comments-count valine-comment-count" data-xid="/2019/12/09/RocketMQ消息乱序问题/" itemprop="commentCount"></span></a></span> <span id="/2019/12/09/RocketMQ消息乱序问题/" class="leancloud_visitors" data-flag-title="RocketMQ消息乱序问题"><span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-eye"></i></span> <span class="post-meta-item-text">热度&#58;</span><span class="leancloud-visitors-count"></span> <span>℃</span></span><div class="post-wordcount"><span class="post-meta-item-icon"><i class="fa fa-file-word-o"></i></span> <span class="post-meta-item-text">字数统计&#58;</span> <span title="字数统计">1,068字</span> <span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-clock-o"></i></span> <span class="post-meta-item-text">阅读时长 &asymp;</span> <span title="阅读时长">4分钟</span></div></div></header><div class="post-body" itemprop="articleBody"><div class="note default"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。</p></div><a id="more"></a><h5 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h5><p>大数据团队要统计报表，如果让大数据系统自己直接跑复杂的大SQL在活动系统的活动数据库上来出一些数据报表，是会严重影响本系统的性能的，所以这个方案优化为了，基于Canal这样的中间件去监听数据库的binlog，然后把这些binlog发送到MQ里去，然后让大数据团队还原数据到Spark之类的系统进行统计；</p><p>但是这就出现了一个问题：活动数据库的binlog消息乱序;</p><h6 id="为什么会出现消息乱序？"><a href="#为什么会出现消息乱序？" class="headerlink" title="为什么会出现消息乱序？"></a>为什么会出现消息乱序？</h6><p>每个Topic指定多个MessageQueue，然后写入消息的时候，其实是会把消息均匀分发给不同的MessageQueue的。比如在写入binlog到MQ的时候，可能会把insert binlog写入到一个MessageQueue里去，update binlog写入到另外一个MessageQueue里去；</p><p>接着大数据系统在获取binlog的时候，可能会部署多台机器组成一个Consumer Group，对于Consumer Group中的每台机器都会负责消费一部分MessageQueue的消息，所以可能一台机器从ConsumeQueue01中获取到了insert binlog，一台机器从ConsumeQueue02中获取到了update binlog；</p><p>因为两台机器上的大数据系统并行的去获取binlog，所以完全有可能是其中一个大数据系统先获取到了update binlog去执行了更新操作，此时存储中没有数据，自然是没法更新的。</p><p>然后另外一个大数据系统再获取到insert binlog去执行插入操作，最终导致只有一个初始的活动数据；<br><img src="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p><h5 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h5><h6 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h6><p>Canal往Mq发送消息的时候，必须要保证消息是有序的；</p><p>也就是说比如Canal作为一个中间件从MySQL那里监听和获取binlog，那么当binlog传输到Canal的时候，也必然是有先后顺序的，先是insert binlog，然后是update binlog；</p><h6 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h6><p>让属于同一个活动参与数据的binlog进入一个MessageQueue；</p><p>比如对一个活动参与数据，我们先后执行了insert、update两条SQL语句，也就对应了2条binlog日志。完全可以根据活动参与数据id来进行判断，我们可以往MQ里发送binlog的时候，根据活动参与数据id来判断一下，如果活动参与数据id相同，必须保证他进入同一个MessageQueue。</p><p>可以采用取模的方法，比如有一个活动参与数据id是200，那么他可能有2条binlog，对这两条binlog，必须要用活动参与数据id=200对MessageQueue的数量进行取模，比如MessageQueue一共有15个，那么此时活动参与数据id=200对15取模，就是2；</p><p>通过这个方法，就可以让一个活动参与数据的binlog都按照顺序进入到一个MessageQueue中去；</p><h6 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h6><p>一个Consumer可以处理多个MessageQueue的消息，但是一个MessageQueue只能交给一个Consumer来进行处理，所以一个活动参与数据的binlog只会有序的交给一个Consumer来进行处理！</p><h5 id="有序消息消费失败怎么办？"><a href="#有序消息消费失败怎么办？" class="headerlink" title="有序消息消费失败怎么办？"></a>有序消息消费失败怎么办？</h5><p>在Consumer处理消息的时候，可能会因为底层存储挂了导致消息处理失败，此时可以返回<code>RECONSUME_LATER</code>状态，然后broker会过一会儿自动重试。</p><p>但是这种方式在有序消息是不行的，因为如果consumer获取到活动参与数据的一个insert binlog，结果处理失败了，此时返回了<code>RECONSUME_LATER</code>，那么这条消息会进入重试队列，过一会儿才会重试。</p><p>但是此时broker会直接处理下一条消息，也就是这个活动参与数据的update binlog，此时万一执行成功了，就根本没有数据可以更新！又会出现消息乱序的问题；</p><p>所以对于有序消息的方案中，如果遇到消息处理失败的场景，就必须返回<code>SUSPEND_CURRENT_QUEUE_A_MOMENT</code>这个状态，意思是先等一会儿，一会儿再继续处理这批消息，而不能把这批消息放入重试队列去，然后直接处理下一批消息。</p></div><div><div><div style="text-align:center;color:#848484;font-size:14px"> -------------本文结束(๑•ᴗ•๑)感谢您的阅读-------------</div></div></div><footer class="post-footer"><div class="post-tags"><a href="/tags/RocketMQ/" rel="tag"><i class="fa fa-tag"></i> RocketMQ</a></div><div class="post-nav"><div class="post-nav-next post-nav-item"><a href="/2019/12/06/RocketMQ消息重复问题/" rel="next" title="RocketMQ消息重复问题"><i class="fa fa-chevron-left"></i> RocketMQ消息重复问题</a></div><span class="post-nav-divider"></span><div class="post-nav-prev post-nav-item"> <a href="/2019/12/13/RocketMQ消息积压问题/" rel="prev" title="RocketMQ消息积压问题">RocketMQ消息积压问题<i class="fa fa-chevron-right"></i></a></div></div></footer></div></article><div class="post-spread"></div></div></div><div class="comments" id="comments"><div id="disqus_thread"><noscript> Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript></div></div></div><div class="sidebar-toggle"><div class="sidebar-toggle-line-wrap"><span class="sidebar-toggle-line sidebar-toggle-line-first"></span><span class="sidebar-toggle-line sidebar-toggle-line-middle"></span><span class="sidebar-toggle-line sidebar-toggle-line-last"></span></div></div><aside id="sidebar" class="sidebar"><div class="sidebar-inner"><ul class="sidebar-nav motion-element"><li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap"> 文章目录</li><li class="sidebar-nav-overview" data-target="site-overview-wrap"> 站点概览</li></ul><section class="site-overview-wrap sidebar-panel"><div class="site-overview"><div class="site-author motion-element" itemprop="author" itemscope itemtype="https://schema.org/Person"> <img class="site-author-image" itemprop="image" src="/uploads/avatar.jpg" alt="阿宅"><p class="site-author-name" itemprop="name">阿宅</p><p class="site-description motion-element" itemprop="description">我说所有的酒，都不如你。</p></div><nav class="site-state motion-element"><div class="site-state-item site-state-posts"> <a href="/archives/"><span class="site-state-item-count">39</span> <span class="site-state-item-name">日志</span></a></div><div class="site-state-item site-state-categories"> <a href="/categories/index.html"><span class="site-state-item-count">10</span> <span class="site-state-item-name">分类</span></a></div><div class="site-state-item site-state-tags"> <a href="/tags/index.html"><span class="site-state-item-count">14</span> <span class="site-state-item-name">标签</span></a></div></nav><div class="links-of-author motion-element"><span class="links-of-author-item"><a href="https://github.com/ZhaiBo" target="_blank" title="GitHub"><i class="fa fa-fw fa-github"></i> GitHub</a></span><span class="links-of-author-item"><a href="mailto:729963917@qq.com" target="_blank" title="E-Mail"><i class="fa fa-fw fa-envelope"></i> E-Mail</a></span><span class="links-of-author-item"><a href="https://www.jianshu.com/u/304044cdb4e6" target="_blank" title="JianShu"><i class="fa fa-fw fa-heartbeat"></i> JianShu</a></span><span class="links-of-author-item"><a href="https://blog.csdn.net/qq_29635485" target="_blank" title="CSDN"><i class="fa fa-fw fa-codepen"></i> CSDN</a></span> <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="360" height="86" src="https://music.163.com/outchain/player?type=2&id=26447698&auto=0&height=66"></iframe></div></div></section><section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active"><div class="post-toc"><div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#出现场景"><span class="nav-number">1.</span> <span class="nav-text">出现场景</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#为什么会出现消息乱序？"><span class="nav-number">1.1.</span> <span class="nav-text">为什么会出现消息乱序？</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#解决方案"><span class="nav-number">2.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#生产者"><span class="nav-number">2.1.</span> <span class="nav-text">生产者</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#Broker"><span class="nav-number">2.2.</span> <span class="nav-text">Broker</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#消费者"><span class="nav-number">2.3.</span> <span class="nav-text">消费者</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#有序消息消费失败怎么办？"><span class="nav-number">3.</span> <span class="nav-text">有序消息消费失败怎么办？</span></a></li></ol></div></div></section><div class="back-to-top"><i class="fa fa-arrow-up"></i> <span id="scrollpercent"><span>0</span>%</span></div></div></aside></div></main><footer id="footer" class="footer"><div class="footer-inner"><div class="copyright">&copy; <span itemprop="copyrightYear">2020</span><span class="with-love"><i class="fa fa-heart"></i></span> <span class="author" itemprop="copyrightHolder">阿宅</span> <span class="post-meta-divider">|</span><span class="post-meta-item-icon"><i class="fa fa-area-chart"></i></span> <span class="post-meta-item-text">全站字数统计&#58;</span> <span title="全站字数统计">30.9k</span></div><div class="busuanzi-count"><script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script><span class="site-pv"><i class="fa fa-eye"></i> &nbsp;&nbsp;嗨！小站共被<span class="busuanzi-value" id="busuanzi_value_site_pv"></span> 位小伙伴访问过.</span></div></div></footer></div><script type="text/javascript">"[object Function]"!==Object.prototype.toString.call(window.Promise)&&(window.Promise=null)</script><script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script><script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script><script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script><script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script><script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script><script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script><script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script><script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script><script type="text/javascript">var disqus_config=function(){this.page.url="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/",this.page.identifier="2019/12/09/RocketMQ消息乱序问题/",this.page.title="RocketMQ消息乱序问题"},d=document,s=d.createElement("script");s.src="https://.disqus.com/embed.js",s.setAttribute("data-timestamp",""+ +new Date),(d.head||d.body).appendChild(s)</script><script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script><script src="//unpkg.com/valine/dist/Valine.min.js"></script><script type="text/javascript">
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next gemini use-motion" lang="zh-Hans">
+<head><meta name="generator" content="Hexo 3.9.0">
+  <meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="theme-color" content="#222">
+
+
+
+  
+  
+    
+    
+  <script src="/lib/pace/pace.min.js?v=1.0.2"></script>
+  <link href="/lib/pace/pace-theme-minimal.min.css?v=1.0.2" rel="stylesheet">
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform">
+<meta http-equiv="Cache-Control" content="no-siteapp">
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css">
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css">
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css">
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/logo.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/cat16.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="RocketMQ,">
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。">
+<meta name="keywords" content="RocketMQ">
+<meta property="og:type" content="article">
+<meta property="og:title" content="RocketMQ消息乱序问题">
+<meta property="og:url" content="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/index.html">
+<meta property="og:site_name" content="阿宅的技术博客">
+<meta property="og:description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:image" content="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70">
+<meta property="og:updated_time" content="2020-02-28T10:47:32.486Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="RocketMQ消息乱序问题">
+<meta name="twitter:description" content="&amp;emsp;&amp;emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。">
+<meta name="twitter:image" content="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Gemini',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"post","offset":10,"b2t":true,"scrollpercent":true,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/">
+
+
+
+
+
+
+  <script>
+  (function(i,s,o,g,r,a,m){i["DaoVoiceObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;a.charset="utf-8";m.parentNode.insertBefore(a,m)})(window,document,"script",('https:' == document.location.protocol ? 'https:' : 'http:') + "//widget.daovoice.io/widget/0f81ff2f.js","daovoice")
+  daovoice('init', {
+      app_id: "1b4551b7"
+    });
+  daovoice('update');
+  </script>
+
+  <title>RocketMQ消息乱序问题 | 阿宅的技术博客</title>
+  
+
+
+
+
+
+  <script type="text/javascript">
+    var _hmt = _hmt || [];
+    (function() {
+      var hm = document.createElement("script");
+      hm.src = "https://hm.baidu.com/hm.js?ce84efc6cd3d0e14408a4c868d25232a";
+      var s = document.getElementsByTagName("script")[0];
+      s.parentNode.insertBefore(hm, s);
+    })();
+  </script>
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+<a href="https://www.github.com/ZhaiBo" class="github-corner" aria-label="View source on Github"><svg width="80" height="80" viewbox="0 0 250 250" style="fill:#151513; color:#fff; position: absolute; top: 0; border: 0; right: 0;" aria-hidden="true"><path d="M0,0 L115,115 L130,115 L142,142 L250,250 L250,0 Z"/><path d="M128.3,109.0 C113.8,99.7 119.0,89.6 119.0,89.6 C122.0,82.7 120.5,78.6 120.5,78.6 C119.2,72.0 123.4,76.3 123.4,76.3 C127.3,80.9 125.5,87.3 125.5,87.3 C122.9,97.6 130.6,101.9 134.4,103.2" fill="currentColor" style="transform-origin: 130px 106px;" class="octo-arm"/><path d="M115.0,115.0 C114.9,115.1 118.7,116.5 119.8,115.4 L133.7,101.6 C136.9,99.2 139.9,98.4 142.2,98.6 C133.8,88.0 127.5,74.4 143.8,58.0 C148.5,53.4 154.0,51.2 159.7,51.0 C160.3,49.4 163.2,43.6 171.4,40.1 C171.4,40.1 176.1,42.5 178.8,56.2 C183.1,58.6 187.2,61.8 190.9,65.4 C194.5,69.0 197.7,73.2 200.1,77.6 C213.8,80.2 216.3,84.9 216.3,84.9 C212.7,93.1 206.9,96.0 205.4,96.6 C205.1,102.4 203.0,107.8 198.3,112.5 C181.9,128.9 168.3,122.5 157.7,114.1 C157.9,116.9 156.7,120.9 152.7,124.9 L141.0,136.5 C139.8,137.7 141.6,141.9 141.8,141.8 Z" fill="currentColor" class="octo-body"/></svg></a><style>.github-corner:hover .octo-arm{animation:octocat-wave 560ms ease-in-out}@keyframes octocat-wave{0%,100%{transform:rotate(0)}20%,60%{transform:rotate(-25deg)}40%,80%{transform:rotate(10deg)}}@media (max-width:500px){.github-corner:hover .octo-arm{animation:none}.github-corner .octo-arm{animation:octocat-wave 560ms ease-in-out}}</style>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/" class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">阿宅的技术博客</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <h1 class="site-subtitle" itemprop="description">( ゜- ゜)つロ</h1>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br>
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br>
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br>
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br>
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+        <li class="menu-item menu-item-search">
+          
+            <a href="javascript:;" class="popup-trigger">
+          
+            
+              <i class="menu-item-icon fa fa-search fa-fw"></i> <br>
+            
+            搜索
+          </a>
+        </li>
+      
+    </ul>
+  
+
+  
+    <div class="site-search">
+      
+  <div class="popup search-popup local-search-popup">
+  <div class="local-search-header clearfix">
+    <span class="search-icon">
+      <i class="fa fa-search"></i>
+    </span>
+    <span class="popup-btn-close">
+      <i class="fa fa-times-circle"></i>
+    </span>
+    <div class="local-search-input-wrapper">
+      <input autocomplete="off" placeholder="搜索..." spellcheck="false" type="text" id="local-search-input">
+    </div>
+  </div>
+  <div id="local-search-result"></div>
+</div>
+
+
+
+    </div>
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="阿宅">
+      <meta itemprop="description" content="我说所有的酒，都不如你。">
+      <meta itemprop="image" content="/uploads/avatar.jpg">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="阿宅的技术博客">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h2 class="post-title" itemprop="name headline">RocketMQ消息乱序问题</h2>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2019-12-09T20:31:28+08:00">
+                2019-12-09
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category">
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/消息队列/" itemprop="url" rel="index">
+                    <span itemprop="name">消息队列</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+              <span class="post-comments-count">
+                <span class="post-meta-divider">|</span>
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-comment-o"></i><span>&nbsp;&nbsp;评论数:</span>
+                </span>
+                <a href="/2019/12/09/RocketMQ消息乱序问题/#comments" itemprop="discussionUrl">
+                  <span class="post-comments-count valine-comment-count" data-xid="/2019/12/09/RocketMQ消息乱序问题/" itemprop="commentCount"></span>
+                </a>
+              </span>
+            
+          
+
+          
+          
+             <span id="/2019/12/09/RocketMQ消息乱序问题/" class="leancloud_visitors" data-flag-title="RocketMQ消息乱序问题">
+               <span class="post-meta-divider">|</span>
+               <span class="post-meta-item-icon">
+                 <i class="fa fa-eye"></i>
+               </span>
+               
+                 <span class="post-meta-item-text">热度&#58;</span>
+               
+                 <span class="leancloud-visitors-count"></span>
+		 <span>℃</span>
+	     </span>
+          
+
+          
+
+          
+            <div class="post-wordcount">
+              
+                
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-file-word-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">字数统计&#58;</span>
+                
+                <span title="字数统计">
+                  1,068字
+                </span>
+              
+
+              
+                <span class="post-meta-divider">|</span>
+              
+
+              
+                <span class="post-meta-item-icon">
+                  <i class="fa fa-clock-o"></i>
+                </span>
+                
+                  <span class="post-meta-item-text">阅读时长 &asymp;</span>
+                
+                <span title="阅读时长">
+                  4分钟
+                </span>
+              
+            </div>
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <div class="note default"><p>&emsp;&emsp;本篇文章总结了RocketMQ消息乱序问题出现的场景和解决方案。</p></div><a id="more"></a> 
+<h5 id="出现场景"><a href="#出现场景" class="headerlink" title="出现场景"></a>出现场景</h5><p>大数据团队要统计报表，如果让大数据系统自己直接跑复杂的大SQL在活动系统的活动数据库上来出一些数据报表，是会严重影响本系统的性能的，所以这个方案优化为了，基于Canal这样的中间件去监听数据库的binlog，然后把这些binlog发送到MQ里去，然后让大数据团队还原数据到Spark之类的系统进行统计；</p>
+<p>但是这就出现了一个问题：活动数据库的binlog消息乱序;</p>
+<h6 id="为什么会出现消息乱序？"><a href="#为什么会出现消息乱序？" class="headerlink" title="为什么会出现消息乱序？"></a>为什么会出现消息乱序？</h6><p>每个Topic指定多个MessageQueue，然后写入消息的时候，其实是会把消息均匀分发给不同的MessageQueue的。比如在写入binlog到MQ的时候，可能会把insert binlog写入到一个MessageQueue里去，update binlog写入到另外一个MessageQueue里去；</p>
+<p>接着大数据系统在获取binlog的时候，可能会部署多台机器组成一个Consumer Group，对于Consumer Group中的每台机器都会负责消费一部分MessageQueue的消息，所以可能一台机器从ConsumeQueue01中获取到了insert binlog，一台机器从ConsumeQueue02中获取到了update binlog；</p>
+<p>因为两台机器上的大数据系统并行的去获取binlog，所以完全有可能是其中一个大数据系统先获取到了update binlog去执行了更新操作，此时存储中没有数据，自然是没法更新的。</p>
+<p>然后另外一个大数据系统再获取到insert binlog去执行插入操作，最终导致只有一个初始的活动数据；<br><img src="https://img-blog.csdnimg.cn/20200228184707195.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzI5NjM1NDg1,size_16,color_FFFFFF,t_70" alt="在这里插入图片描述"></p>
+<h5 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h5><h6 id="生产者"><a href="#生产者" class="headerlink" title="生产者"></a>生产者</h6><p>Canal往Mq发送消息的时候，必须要保证消息是有序的；</p>
+<p>也就是说比如Canal作为一个中间件从MySQL那里监听和获取binlog，那么当binlog传输到Canal的时候，也必然是有先后顺序的，先是insert binlog，然后是update binlog；</p>
+<h6 id="Broker"><a href="#Broker" class="headerlink" title="Broker"></a>Broker</h6><p>让属于同一个活动参与数据的binlog进入一个MessageQueue；</p>
+<p>比如对一个活动参与数据，我们先后执行了insert、update两条SQL语句，也就对应了2条binlog日志。完全可以根据活动参与数据id来进行判断，我们可以往MQ里发送binlog的时候，根据活动参与数据id来判断一下，如果活动参与数据id相同，必须保证他进入同一个MessageQueue。</p>
+<p>可以采用取模的方法，比如有一个活动参与数据id是200，那么他可能有2条binlog，对这两条binlog，必须要用活动参与数据id=200对MessageQueue的数量进行取模，比如MessageQueue一共有15个，那么此时活动参与数据id=200对15取模，就是2；</p>
+<p>通过这个方法，就可以让一个活动参与数据的binlog都按照顺序进入到一个MessageQueue中去；</p>
+<h6 id="消费者"><a href="#消费者" class="headerlink" title="消费者"></a>消费者</h6><p>一个Consumer可以处理多个MessageQueue的消息，但是一个MessageQueue只能交给一个Consumer来进行处理，所以一个活动参与数据的binlog只会有序的交给一个Consumer来进行处理！</p>
+<h5 id="有序消息消费失败怎么办？"><a href="#有序消息消费失败怎么办？" class="headerlink" title="有序消息消费失败怎么办？"></a>有序消息消费失败怎么办？</h5><p>在Consumer处理消息的时候，可能会因为底层存储挂了导致消息处理失败，此时可以返回<code>RECONSUME_LATER</code>状态，然后broker会过一会儿自动重试。</p>
+<p>但是这种方式在有序消息是不行的，因为如果consumer获取到活动参与数据的一个insert binlog，结果处理失败了，此时返回了<code>RECONSUME_LATER</code>，那么这条消息会进入重试队列，过一会儿才会重试。</p>
+<p>但是此时broker会直接处理下一条消息，也就是这个活动参与数据的update binlog，此时万一执行成功了，就根本没有数据可以更新！又会出现消息乱序的问题；</p>
+<p>所以对于有序消息的方案中，如果遇到消息处理失败的场景，就必须返回<code>SUSPEND_CURRENT_QUEUE_A_MOMENT</code>这个状态，意思是先等一会儿，一会儿再继续处理这批消息，而不能把这批消息放入重试队列去，然后直接处理下一批消息。</p>
+
+      
+    </div>
+    
+    
+    
+    <div>
+         
+             <div>
+    
+        <div style="text-align:center;color: #848484;font-size:14px;">
+	
+	
+	-------------本文结束(๑•ᴗ•๑)感谢您的阅读-------------
+	</div>
+    
+</div>
+         
+    </div>
+    
+
+    
+	
+    
+	
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/RocketMQ/" rel="tag"><i class="fa fa-tag"></i> RocketMQ</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2019/12/06/RocketMQ消息重复问题/" rel="next" title="RocketMQ消息重复问题">
+                <i class="fa fa-chevron-left"></i> RocketMQ消息重复问题
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2019/12/13/RocketMQ消息积压问题/" rel="prev" title="RocketMQ消息积压问题">
+                RocketMQ消息积压问题 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+    <div class="comments" id="comments">
+      <div id="disqus_thread">
+        <noscript>
+          Please enable JavaScript to view the
+          <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a>
+        </noscript>
+      </div>
+    </div>
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="https://schema.org/Person">
+            
+              <img class="site-author-image" itemprop="image" src="/uploads/avatar.jpg" alt="阿宅">
+            
+              <p class="site-author-name" itemprop="name">阿宅</p>
+              <p class="site-description motion-element" itemprop="description">我说所有的酒，都不如你。</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">39</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">10</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">14</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+            <div class="links-of-author motion-element">
+                
+                  <span class="links-of-author-item">
+                    <a href="https://github.com/ZhaiBo" target="_blank" title="GitHub">
+                      
+                        <i class="fa fa-fw fa-github"></i>GitHub</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="mailto:729963917@qq.com" target="_blank" title="E-Mail">
+                      
+                        <i class="fa fa-fw fa-envelope"></i>E-Mail</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://www.jianshu.com/u/304044cdb4e6" target="_blank" title="JianShu">
+                      
+                        <i class="fa fa-fw fa-heartbeat"></i>JianShu</a>
+                  </span>
+                
+                  <span class="links-of-author-item">
+                    <a href="https://blog.csdn.net/qq_29635485" target="_blank" title="CSDN">
+                      
+                        <i class="fa fa-fw fa-codepen"></i>CSDN</a>
+                  </span>
+                
+
+	     <iframe frameborder="no" border="0" marginwidth="0" marginheight="0" width="360" height="86" src="https://music.163.com/outchain/player?type=2&id=26447698&auto=0&height=66"></iframe>
+            </div>
+          
+
+          
+          
+	  
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-5"><a class="nav-link" href="#出现场景"><span class="nav-number">1.</span> <span class="nav-text">出现场景</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#为什么会出现消息乱序？"><span class="nav-number">1.1.</span> <span class="nav-text">为什么会出现消息乱序？</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#解决方案"><span class="nav-number">2.</span> <span class="nav-text">解决方案</span></a><ol class="nav-child"><li class="nav-item nav-level-6"><a class="nav-link" href="#生产者"><span class="nav-number">2.1.</span> <span class="nav-text">生产者</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#Broker"><span class="nav-number">2.2.</span> <span class="nav-text">Broker</span></a></li><li class="nav-item nav-level-6"><a class="nav-link" href="#消费者"><span class="nav-number">2.3.</span> <span class="nav-text">消费者</span></a></li></ol></li><li class="nav-item nav-level-5"><a class="nav-link" href="#有序消息消费失败怎么办？"><span class="nav-number">3.</span> <span class="nav-text">有序消息消费失败怎么办？</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+        <div class="back-to-top">
+          <i class="fa fa-arrow-up"></i>
+          
+            <span id="scrollpercent"><span>0</span>%</span>
+          
+        </div>
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2020</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">阿宅</span>
+
+  
+    <span class="post-meta-divider">|</span>
+    <span class="post-meta-item-icon">
+      <i class="fa fa-area-chart"></i>
+    </span>
+    
+      <span class="post-meta-item-text">全站字数统计&#58;</span>
+    
+    <span title="全站字数统计">30.9k</span>
+  
+</div>
+
+
+
+
+
+
+
+
+
+        
+<div class="busuanzi-count">
+  <script async src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script>
+
+  
+
+  
+    <span class="site-pv">
+      <i class="fa fa-eye"></i>&nbsp;&nbsp;嗨！小站共被
+      <span class="busuanzi-value" id="busuanzi_value_site_pv"></span>
+      位小伙伴访问过.
+    </span>
+  
+</div>
+
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+    
+
+    
+      <script type="text/javascript">
+        var disqus_config = function () {
+          this.page.url = 'https://zhaibo.ink/2019/12/09/RocketMQ消息乱序问题/';
+          this.page.identifier = '2019/12/09/RocketMQ消息乱序问题/';
+          this.page.title = 'RocketMQ消息乱序问题';
+        };
+        var d = document, s = d.createElement('script');
+        s.src = 'https://.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', '' + +new Date());
+        (d.head || d.body).appendChild(s);
+      </script>
+    
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+  <script src="//cdn1.lncld.net/static/js/3.0.4/av-min.js"></script>
+  <script src="//unpkg.com/valine/dist/Valine.min.js"></script>
+  
+  <script type="text/javascript">
     var GUEST = ['nick','mail','link'];
     var guest = 'nick,mail';
     guest = guest.split(',').filter(item=>{
@@ -15,7 +950,13 @@
         guest_info:guest,
         pageSize:'10' || 10,
     });
-  </script><script type="text/javascript">
+  </script>
+
+
+
+  
+
+  <script type="text/javascript">
     // Popup Window;
     var isfetched = false;
     var isXml = true;
@@ -330,4 +1271,149 @@
         onPopupClose();
       }
     });
-  </script><script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script><script>AV.initialize("nCfTieRdccNd2GFjUo5Yq37l-gzGzoHsz","d3NWCxjsQUaGQJIVpc49yLXB")</script><script>function showTime(e){var t=new AV.Query(e),c=[],u=$(".leancloud_visitors");u.each(function(){c.push($(this).attr("id").trim())}),t.containedIn("url",c),t.find().done(function(e){var t=".leancloud-visitors-count";if(0!==e.length){for(var n=0;n<e.length;n++){var o=e[n],i=o.get("url"),s=o.get("time"),r=document.getElementById(i);$(r).find(t).text(s)}for(n=0;n<c.length;n++){i=c[n],r=document.getElementById(i);var l=$(r).find(t);""==l.text()&&l.text(0)}}else u.find(t).text(0)}).fail(function(e,t){console.log("Error: "+t.code+" "+t.message)})}function addCount(i){var e=$(".leancloud_visitors"),s=e.attr("id").trim(),r=e.attr("data-flag-title").trim(),t=new AV.Query(i);t.equalTo("url",s),t.find({success:function(e){if(0<e.length){var t=e[0];t.fetchWhenSave(!0),t.increment("time"),t.save(null,{success:function(e){$(document.getElementById(s)).find(".leancloud-visitors-count").text(e.get("time"))},error:function(e,t){console.log("Failed to save Visitor num, with error message: "+t.message)}})}else{var n=new i,o=new AV.ACL;o.setPublicReadAccess(!0),o.setPublicWriteAccess(!0),n.setACL(o),n.set("title",r),n.set("url",s),n.set("time",1),n.save(null,{success:function(e){$(document.getElementById(s)).find(".leancloud-visitors-count").text(e.get("time"))},error:function(e,t){console.log("Failed to create")}})}},error:function(e){console.log("Error:"+e.code+" "+e.message)}})}$(function(){var e=AV.Object.extend("Counter");1==$(".leancloud_visitors").length?addCount(e):1<$(".post-title-link").length&&showTime(e)})</script><script>!function(){var t=document.createElement("script"),e=window.location.protocol.split(":")[0];t.src="https"===e?"https://zz.bdstatic.com/linksubmit/push.js":"http://push.zhanzhang.baidu.com/push.js";var s=document.getElementsByTagName("script")[0];s.parentNode.insertBefore(t,s)}()</script></body></html><script type="text/javascript" src="/js/src/love.js"></script>
+  </script>
+
+
+
+
+
+  
+
+  
+  <script src="https://cdn1.lncld.net/static/js/av-core-mini-0.6.4.js"></script>
+  <script>AV.initialize("nCfTieRdccNd2GFjUo5Yq37l-gzGzoHsz", "d3NWCxjsQUaGQJIVpc49yLXB");</script>
+  <script>
+    function showTime(Counter) {
+      var query = new AV.Query(Counter);
+      var entries = [];
+      var $visitors = $(".leancloud_visitors");
+
+      $visitors.each(function () {
+        entries.push( $(this).attr("id").trim() );
+      });
+
+      query.containedIn('url', entries);
+      query.find()
+        .done(function (results) {
+          var COUNT_CONTAINER_REF = '.leancloud-visitors-count';
+
+          if (results.length === 0) {
+            $visitors.find(COUNT_CONTAINER_REF).text(0);
+            return;
+          }
+
+          for (var i = 0; i < results.length; i++) {
+            var item = results[i];
+            var url = item.get('url');
+            var time = item.get('time');
+            var element = document.getElementById(url);
+
+            $(element).find(COUNT_CONTAINER_REF).text(time);
+          }
+          for(var i = 0; i < entries.length; i++) {
+            var url = entries[i];
+            var element = document.getElementById(url);
+            var countSpan = $(element).find(COUNT_CONTAINER_REF);
+            if( countSpan.text() == '') {
+              countSpan.text(0);
+            }
+          }
+        })
+        .fail(function (object, error) {
+          console.log("Error: " + error.code + " " + error.message);
+        });
+    }
+
+    function addCount(Counter) {
+      var $visitors = $(".leancloud_visitors");
+      var url = $visitors.attr('id').trim();
+      var title = $visitors.attr('data-flag-title').trim();
+      var query = new AV.Query(Counter);
+
+      query.equalTo("url", url);
+      query.find({
+        success: function(results) {
+          if (results.length > 0) {
+            var counter = results[0];
+            counter.fetchWhenSave(true);
+            counter.increment("time");
+            counter.save(null, {
+              success: function(counter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(counter.get('time'));
+              },
+              error: function(counter, error) {
+                console.log('Failed to save Visitor num, with error message: ' + error.message);
+              }
+            });
+          } else {
+            var newcounter = new Counter();
+            /* Set ACL */
+            var acl = new AV.ACL();
+            acl.setPublicReadAccess(true);
+            acl.setPublicWriteAccess(true);
+            newcounter.setACL(acl);
+            /* End Set ACL */
+            newcounter.set("title", title);
+            newcounter.set("url", url);
+            newcounter.set("time", 1);
+            newcounter.save(null, {
+              success: function(newcounter) {
+                var $element = $(document.getElementById(url));
+                $element.find('.leancloud-visitors-count').text(newcounter.get('time'));
+              },
+              error: function(newcounter, error) {
+                console.log('Failed to create');
+              }
+            });
+          }
+        },
+        error: function(error) {
+          console.log('Error:' + error.code + " " + error.message);
+        }
+      });
+    }
+
+    $(function() {
+      var Counter = AV.Object.extend("Counter");
+      if ($('.leancloud_visitors').length == 1) {
+        addCount(Counter);
+      } else if ($('.post-title-link').length > 1) {
+        showTime(Counter);
+      }
+    });
+  </script>
+
+
+
+  
+
+  
+<script>
+(function(){
+    var bp = document.createElement('script');
+    var curProtocol = window.location.protocol.split(':')[0];
+    if (curProtocol === 'https') {
+        bp.src = 'https://zz.bdstatic.com/linksubmit/push.js';        
+    }
+    else {
+        bp.src = 'http://push.zhanzhang.baidu.com/push.js';
+    }
+    var s = document.getElementsByTagName("script")[0];
+    s.parentNode.insertBefore(bp, s);
+})();
+</script>
+
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
+<script type="text/javascript" src="/js/src/love.js"></script>
